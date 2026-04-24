@@ -1,0 +1,45 @@
+version: "3.9"
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: backend-bank-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-backend_bank}
+      MYSQL_USER: ${MYSQL_USER:-backend_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-backend_pass}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_pass}
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-root_pass}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend-bank:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: backend-bank-app
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SERVER_PORT: 8080
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-backend_bank}
+      MYSQL_USER: ${MYSQL_USER:-backend_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-backend_pass}
+    ports:
+      - "8080:8080"
+
+volumes:
+  mysql_data:
+

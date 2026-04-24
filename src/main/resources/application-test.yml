@@ -1,0 +1,8 @@
+spring:
+  datasource:
+    url: jdbc:mysql://${TEST_MYSQL_HOST:localhost}:${TEST_MYSQL_PORT:3306}/${TEST_MYSQL_DATABASE:backend_bank_test}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: ${TEST_MYSQL_USER:backend_user}
+    password: ${TEST_MYSQL_PASSWORD:backend_pass}
+  jpa:
+    show-sql: false
+
