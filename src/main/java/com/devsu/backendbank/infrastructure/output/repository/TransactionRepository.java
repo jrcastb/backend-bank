@@ -11,10 +11,13 @@ import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
 
     Page<Transaction> findAll(Pageable pageable);
+
+    Optional<Transaction> findTopByAccount_IdOrderByFechaDescIdDesc(Long accountId);
 
     Page<Transaction> findByAccount_IdAndFechaBetween(Long accountId,
                                                       LocalDateTime fechaDesde,

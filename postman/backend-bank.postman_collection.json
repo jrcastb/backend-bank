@@ -1,0 +1,326 @@
+{
+  "info": {
+    "_postman_id": "8f8b6549-8cb0-42a7-9a4e-66be24e9f114",
+    "name": "backend-bank",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Coleccion para validar CRUD de clientes, cuentas, movimientos y reportes. Incluye casos de negocio requeridos: saldo no disponible y cupo diario excedido."
+  },
+  "auth": {
+    "type": "basic",
+    "basic": [
+      {
+        "key": "username",
+        "value": "{{username}}",
+        "type": "string"
+      },
+      {
+        "key": "password",
+        "value": "{{password}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "username",
+      "value": "user"
+    },
+    {
+      "key": "password",
+      "value": "change-me"
+    },
+    {
+      "key": "clienteId",
+      "value": "1"
+    },
+    {
+      "key": "cuentaId",
+      "value": "1"
+    },
+    {
+      "key": "movimientoId",
+      "value": "1"
+    }
+  ],
+  "item": [
+    {
+      "name": "Clientes",
+      "item": [
+        {
+          "name": "Listar clientes",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/clientes"
+          }
+        },
+        {
+          "name": "Obtener cliente por id",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/clientes/{{clienteId}}"
+          }
+        },
+        {
+          "name": "Crear cliente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Carlos Perez\",\n  \"genero\": \"MASCULINO\",\n  \"edad\": 29,\n  \"identificacion\": \"0912345678\",\n  \"direccion\": \"Av. Quito y Colon\",\n  \"telefono\": \"0999999999\",\n  \"contrasena\": \"Secret123\",\n  \"estado\": true\n}"
+            },
+            "url": "{{baseUrl}}/clientes"
+          }
+        },
+        {
+          "name": "Actualizar cliente (PUT)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Carlos Perez Actualizado\",\n  \"genero\": \"MASCULINO\",\n  \"edad\": 30,\n  \"identificacion\": \"0912345678\",\n  \"direccion\": \"Av. Amazonas y Naciones Unidas\",\n  \"telefono\": \"0988888888\",\n  \"contrasena\": \"Secret123\",\n  \"estado\": true\n}"
+            },
+            "url": "{{baseUrl}}/clientes/{{clienteId}}"
+          }
+        },
+        {
+          "name": "Actualizar cliente parcial (PATCH)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"direccion\": \"Direccion patch\",\n  \"telefono\": \"0977777777\"\n}"
+            },
+            "url": "{{baseUrl}}/clientes/{{clienteId}}"
+          }
+        },
+        {
+          "name": "Eliminar cliente",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/clientes/{{clienteId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cuentas",
+      "item": [
+        {
+          "name": "Listar cuentas",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/cuentas"
+          }
+        },
+        {
+          "name": "Obtener cuenta por id",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/cuentas/{{cuentaId}}"
+          }
+        },
+        {
+          "name": "Crear cuenta",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clienteId\": 1,\n  \"numeroCuenta\": \"998877\",\n  \"tipoCuenta\": \"CORRIENTE\",\n  \"saldoInicial\": 500.00,\n  \"estado\": true\n}"
+            },
+            "url": "{{baseUrl}}/cuentas"
+          }
+        },
+        {
+          "name": "Actualizar cuenta (PUT)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clienteId\": 1,\n  \"numeroCuenta\": \"998877\",\n  \"tipoCuenta\": \"AHORROS\",\n  \"saldoInicial\": 650.00,\n  \"estado\": true\n}"
+            },
+            "url": "{{baseUrl}}/cuentas/{{cuentaId}}"
+          }
+        },
+        {
+          "name": "Actualizar cuenta parcial (PATCH)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipoCuenta\": \"CORRIENTE\",\n  \"estado\": true\n}"
+            },
+            "url": "{{baseUrl}}/cuentas/{{cuentaId}}"
+          }
+        },
+        {
+          "name": "Eliminar cuenta",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/cuentas/{{cuentaId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Movimientos",
+      "item": [
+        {
+          "name": "Listar movimientos",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/movimientos"
+          }
+        },
+        {
+          "name": "Obtener movimiento por id",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/movimientos/{{movimientoId}}"
+          }
+        },
+        {
+          "name": "Crear movimiento CREDIT (caso exitoso)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cuentaId\": 1,\n  \"tipoMovimiento\": \"CREDIT\",\n  \"valor\": 300.00\n}"
+            },
+            "url": "{{baseUrl}}/movimientos"
+          }
+        },
+        {
+          "name": "Crear movimiento DEBIT (caso exitoso)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cuentaId\": 1,\n  \"tipoMovimiento\": \"DEBIT\",\n  \"valor\": 100.00\n}"
+            },
+            "url": "{{baseUrl}}/movimientos"
+          }
+        },
+        {
+          "name": "Crear DEBIT - Saldo no disponible",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cuentaId\": 2,\n  \"tipoMovimiento\": \"DEBIT\",\n  \"valor\": 999999.00\n}"
+            },
+            "url": "{{baseUrl}}/movimientos"
+          }
+        },
+        {
+          "name": "Crear DEBIT - Cupo diario excedido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cuentaId\": 1,\n  \"tipoMovimiento\": \"DEBIT\",\n  \"valor\": 1100.00\n}"
+            },
+            "url": "{{baseUrl}}/movimientos"
+          }
+        },
+        {
+          "name": "Eliminar movimiento",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/movimientos/{{movimientoId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reportes",
+      "item": [
+        {
+          "name": "Reporte JSON",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/reportes?clienteId=1&fechaDesde=2022-02-01&fechaHasta=2026-12-31&formato=json"
+          }
+        },
+        {
+          "name": "Reporte PDF base64",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/reportes?clienteId=1&fechaDesde=2022-02-01&fechaHasta=2026-12-31&formato=pdf"
+          }
+        },
+        {
+          "name": "Reporte rango invalido",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/reportes?clienteId=1&fechaDesde=2026-12-31&fechaHasta=2026-01-01&formato=json"
+          }
+        }
+      ]
+    }
+  ]
+}
+

@@ -1,6 +1,10 @@
 spring:
   application:
     name: backend-bank
+  security:
+    user:
+      name: ${SECURITY_USER:admin}
+      password: ${SECURITY_PASSWORD:admin123}
   jpa:
     open-in-view: false
     hibernate:

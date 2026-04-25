@@ -2,9 +2,7 @@ openapi: 3.0.3
 info:
   title: Backend Bank API
   version: 1.0.0
-  description: |
-    Plantilla base del contrato OpenAPI para la prueba tecnica.
-    Este archivo se puede evolucionar endpoint por endpoint conforme avances en la implementacion.
+  description: API REST para gestion de clientes, cuentas, movimientos y reportes.
 servers:
   - url: http://localhost:8080
     description: Local
@@ -15,19 +13,20 @@ servers:
         default: localhost
       port:
         default: "8080"
+security:
+  - basicAuth: []
 tags:
   - name: Clientes
   - name: Cuentas
   - name: Movimientos
   - name: Reportes
-security:
-  - basicAuth: []
+
 paths:
   /clientes:
     get:
       tags: [Clientes]
       summary: Listar clientes
-      operationId: listarClientes
+      operationId: findAllClients
       responses:
         "200":
           description: Lista de clientes
@@ -36,26 +35,26 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/ClienteResponse"
+                  $ref: "#/components/schemas/ClientResponse"
         "500":
           $ref: "#/components/responses/InternalError"
     post:
       tags: [Clientes]
       summary: Crear cliente
-      operationId: crearCliente
+      operationId: createClient
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ClienteCreateRequest"
+              $ref: "#/components/schemas/ClientCreateRequest"
       responses:
         "201":
           description: Cliente creado
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ClienteResponse"
+                $ref: "#/components/schemas/ClientResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "409":
@@ -67,62 +66,66 @@ paths:
     get:
       tags: [Clientes]
       summary: Obtener cliente por id
-      operationId: obtenerClientePorId
+      operationId: findClientById
       responses:
         "200":
           description: Cliente encontrado
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ClienteResponse"
+                $ref: "#/components/schemas/ClientResponse"
         "404":
           $ref: "#/components/responses/NotFound"
     put:
       tags: [Clientes]
       summary: Reemplazar cliente
-      operationId: reemplazarCliente
+      operationId: updateClient
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ClienteUpdateRequest"
+              $ref: "#/components/schemas/ClientUpdateRequest"
       responses:
         "200":
           description: Cliente actualizado
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ClienteResponse"
+                $ref: "#/components/schemas/ClientResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
     patch:
       tags: [Clientes]
       summary: Actualizar parcialmente cliente
-      operationId: actualizarParcialCliente
+      operationId: patchClient
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ClientePatchRequest"
+              $ref: "#/components/schemas/ClientPatchRequest"
       responses:
         "200":
           description: Cliente actualizado parcialmente
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ClienteResponse"
+                $ref: "#/components/schemas/ClientResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
     delete:
       tags: [Clientes]
       summary: Eliminar cliente
-      operationId: eliminarCliente
+      operationId: deleteClient
       responses:
         "204":
           description: Cliente eliminado
@@ -133,7 +136,7 @@ paths:
     get:
       tags: [Cuentas]
       summary: Listar cuentas
-      operationId: listarCuentas
+      operationId: findAllAccounts
       responses:
         "200":
           description: Lista de cuentas
@@ -142,28 +145,30 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/CuentaResponse"
+                  $ref: "#/components/schemas/AccountResponse"
         "500":
           $ref: "#/components/responses/InternalError"
     post:
       tags: [Cuentas]
       summary: Crear cuenta
-      operationId: crearCuenta
+      operationId: createAccount
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CuentaCreateRequest"
+              $ref: "#/components/schemas/AccountCreateRequest"
       responses:
         "201":
           description: Cuenta creada
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CuentaResponse"
+                $ref: "#/components/schemas/AccountResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
 
@@ -173,62 +178,66 @@ paths:
     get:
       tags: [Cuentas]
       summary: Obtener cuenta por id
-      operationId: obtenerCuentaPorId
+      operationId: findAccountById
       responses:
         "200":
           description: Cuenta encontrada
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CuentaResponse"
+                $ref: "#/components/schemas/AccountResponse"
         "404":
           $ref: "#/components/responses/NotFound"
     put:
       tags: [Cuentas]
       summary: Reemplazar cuenta
-      operationId: reemplazarCuenta
+      operationId: updateAccount
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CuentaUpdateRequest"
+              $ref: "#/components/schemas/AccountUpdateRequest"
       responses:
         "200":
           description: Cuenta actualizada
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CuentaResponse"
+                $ref: "#/components/schemas/AccountResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
     patch:
       tags: [Cuentas]
       summary: Actualizar parcialmente cuenta
-      operationId: actualizarParcialCuenta
+      operationId: patchAccount
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CuentaPatchRequest"
+              $ref: "#/components/schemas/AccountPatchRequest"
       responses:
         "200":
           description: Cuenta actualizada parcialmente
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CuentaResponse"
+                $ref: "#/components/schemas/AccountResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
     delete:
       tags: [Cuentas]
       summary: Eliminar cuenta
-      operationId: eliminarCuenta
+      operationId: deleteAccount
       responses:
         "204":
           description: Cuenta eliminada
@@ -239,7 +248,7 @@ paths:
     get:
       tags: [Movimientos]
       summary: Listar movimientos
-      operationId: listarMovimientos
+      operationId: findAllTransactions
       responses:
         "200":
           description: Lista de movimientos
@@ -248,26 +257,26 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/MovimientoResponse"
+                  $ref: "#/components/schemas/TransactionResponse"
         "500":
           $ref: "#/components/responses/InternalError"
     post:
       tags: [Movimientos]
       summary: Registrar movimiento
-      operationId: crearMovimiento
+      operationId: createTransaction
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/MovimientoCreateRequest"
+              $ref: "#/components/schemas/TransactionCreateRequest"
       responses:
         "201":
           description: Movimiento creado
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MovimientoResponse"
+                $ref: "#/components/schemas/TransactionResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "404":
@@ -281,20 +290,20 @@ paths:
     get:
       tags: [Movimientos]
       summary: Obtener movimiento por id
-      operationId: obtenerMovimientoPorId
+      operationId: findTransactionById
       responses:
         "200":
           description: Movimiento encontrado
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MovimientoResponse"
+                $ref: "#/components/schemas/TransactionResponse"
         "404":
           $ref: "#/components/responses/NotFound"
     delete:
       tags: [Movimientos]
       summary: Eliminar movimiento
-      operationId: eliminarMovimiento
+      operationId: deleteTransaction
       responses:
         "204":
           description: Movimiento eliminado
@@ -305,7 +314,7 @@ paths:
     get:
       tags: [Reportes]
       summary: Generar reporte por cliente y rango de fechas
-      operationId: generarReporte
+      operationId: generateReport
       parameters:
         - name: clienteId
           in: query
@@ -443,18 +452,30 @@ components:
           example: "must not be blank"
       required: [field, message]
 
-    PersonaBase:
+    Gender:
+      type: string
+      enum: [MASCULINO, FEMENINO, OTRO]
+
+    AccountType:
+      type: string
+      enum: [AHORROS, CORRIENTE]
+
+    TransactionType:
+      type: string
+      enum: [CREDIT, DEBIT]
+
+    ClientCreateRequest:
       type: object
       properties:
         nombre:
           type: string
           maxLength: 120
         genero:
-          type: string
-          maxLength: 20
+          $ref: "#/components/schemas/Gender"
         edad:
           type: integer
           minimum: 0
+          maximum: 130
         identificacion:
           type: string
           maxLength: 50
@@ -464,31 +485,56 @@ components:
         telefono:
           type: string
           maxLength: 30
+        contrasena:
+          type: string
+          minLength: 8
+          maxLength: 255
+        estado:
+          type: boolean
+          default: true
+      required: [nombre, genero, edad, identificacion, direccion, telefono, contrasena]
 
-    ClienteCreateRequest:
-      allOf:
-        - $ref: "#/components/schemas/PersonaBase"
-        - type: object
-          properties:
-            contrasena:
-              type: string
-              minLength: 8
-            estado:
-              type: boolean
-              default: true
-          required: [nombre, genero, edad, identificacion, direccion, telefono, contrasena]
+    ClientUpdateRequest:
+      $ref: "#/components/schemas/ClientCreateRequest"
 
-    ClienteUpdateRequest:
-      allOf:
-        - $ref: "#/components/schemas/ClienteCreateRequest"
-
-    ClientePatchRequest:
+    ClientPatchRequest:
       type: object
       properties:
         nombre:
           type: string
+          maxLength: 120
         genero:
+          $ref: "#/components/schemas/Gender"
+        edad:
+          type: integer
+          minimum: 0
+          maximum: 130
+        identificacion:
           type: string
+          maxLength: 50
+        direccion:
+          type: string
+          maxLength: 180
+        telefono:
+          type: string
+          maxLength: 30
+        contrasena:
+          type: string
+          minLength: 8
+          maxLength: 255
+        estado:
+          type: boolean
+
+    ClientResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        nombre:
+          type: string
+        genero:
+          $ref: "#/components/schemas/Gender"
         edad:
           type: integer
         identificacion:
@@ -497,24 +543,11 @@ components:
           type: string
         telefono:
           type: string
-        contrasena:
-          type: string
         estado:
           type: boolean
+      required: [id, nombre, genero, edad, identificacion, direccion, telefono, estado]
 
-    ClienteResponse:
-      allOf:
-        - $ref: "#/components/schemas/PersonaBase"
-        - type: object
-          properties:
-            id:
-              type: integer
-              format: int64
-            estado:
-              type: boolean
-          required: [id, nombre, genero, edad, identificacion, direccion, telefono, estado]
-
-    CuentaCreateRequest:
+    AccountCreateRequest:
       type: object
       properties:
         clienteId:
@@ -524,8 +557,7 @@ components:
           type: string
           maxLength: 30
         tipoCuenta:
-          type: string
-          example: "AHORROS"
+          $ref: "#/components/schemas/AccountType"
         saldoInicial:
           type: number
           format: double
@@ -535,20 +567,25 @@ components:
           default: true
       required: [clienteId, numeroCuenta, tipoCuenta, saldoInicial]
 
-    CuentaUpdateRequest:
-      $ref: "#/components/schemas/CuentaCreateRequest"
+    AccountUpdateRequest:
+      $ref: "#/components/schemas/AccountCreateRequest"
 
-    CuentaPatchRequest:
+    AccountPatchRequest:
       type: object
       properties:
         numeroCuenta:
           type: string
+          maxLength: 30
         tipoCuenta:
-          type: string
+          $ref: "#/components/schemas/AccountType"
+        saldoInicial:
+          type: number
+          format: double
+          minimum: 0
         estado:
           type: boolean
 
-    CuentaResponse:
+    AccountResponse:
       type: object
       properties:
         id:
@@ -560,7 +597,7 @@ components:
         numeroCuenta:
           type: string
         tipoCuenta:
-          type: string
+          $ref: "#/components/schemas/AccountType"
         saldoInicial:
           type: number
           format: double
@@ -568,22 +605,21 @@ components:
           type: boolean
       required: [id, clienteId, numeroCuenta, tipoCuenta, saldoInicial, estado]
 
-    MovimientoCreateRequest:
+    TransactionCreateRequest:
       type: object
       properties:
         cuentaId:
           type: integer
           format: int64
         tipoMovimiento:
-          type: string
-          description: CREDIT o DEBIT
-          enum: [CREDIT, DEBIT]
+          $ref: "#/components/schemas/TransactionType"
         valor:
           type: number
           format: double
+          minimum: 0.01
       required: [cuentaId, tipoMovimiento, valor]
 
-    MovimientoResponse:
+    TransactionResponse:
       type: object
       properties:
         id:
@@ -596,7 +632,7 @@ components:
           type: string
           format: date-time
         tipoMovimiento:
-          type: string
+          $ref: "#/components/schemas/TransactionType"
         valor:
           type: number
           format: double
@@ -605,7 +641,7 @@ components:
           format: double
       required: [id, cuentaId, fecha, tipoMovimiento, valor, saldo]
 
-    ReporteItem:
+    ReporteItemResponse:
       type: object
       properties:
         fecha:
@@ -629,7 +665,7 @@ components:
           type: number
           format: double
 
-    ReporteResumen:
+    ReporteResumenResponse:
       type: object
       properties:
         totalDebitos:
@@ -652,11 +688,11 @@ components:
           type: string
           format: date
         resumen:
-          $ref: "#/components/schemas/ReporteResumen"
+          $ref: "#/components/schemas/ReporteResumenResponse"
         items:
           type: array
           items:
-            $ref: "#/components/schemas/ReporteItem"
+            $ref: "#/components/schemas/ReporteItemResponse"
         pdfBase64:
           type: string
           nullable: true
