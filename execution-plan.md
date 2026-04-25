@@ -135,7 +135,7 @@ Instalar MySQL en Ubuntu local y mantener misma version que en contenedor para e
 
 ### 4.1 Modelo relacional minimo
 - `persona` (base): nombre, genero, edad, identificacion (unique), direccion, telefono.
-- `cliente`: PK propia, FK a `persona`, contrasena, estado.
+- `cliente`: PK autogenerada `id`, FK a `persona`, contrasena, estado.
 - `cuenta`: numero cuenta (unique), tipo cuenta, saldo inicial, estado, FK cliente.
 - `movimiento`: fecha, tipo movimiento, valor, saldo, FK cuenta.
 
@@ -147,7 +147,7 @@ En `src/main/resources/db/migration`:
 
 ### 4.3 Constraints e indices clave
 - Unique: identificacion, numero_cuenta.
-- Indexes: `(cliente_id, fecha)` y `(cuenta_id, fecha)` en movimientos para reportes.
+- Indexes: `cuenta(cliente_id)` y `movimiento(cuenta_id, fecha)` para acelerar joins y reportes.
 - Check constraints (si aplica): tipo de movimiento/valores permitidos.
 
 ### 4.4 Script entregable `BaseDatos.sql`
