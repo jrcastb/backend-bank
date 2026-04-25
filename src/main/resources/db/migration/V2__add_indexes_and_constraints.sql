@@ -4,7 +4,6 @@ ALTER TABLE persona
 
 ALTER TABLE cliente
     ADD CONSTRAINT uk_cliente_persona UNIQUE (persona_id),
-    ADD CONSTRAINT uk_cliente_cliente_id UNIQUE (cliente_id),
     ADD CONSTRAINT fk_cliente_persona FOREIGN KEY (persona_id) REFERENCES persona (id) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 ALTER TABLE cuenta
