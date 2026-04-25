@@ -8,8 +8,7 @@ public record ReporteResponse(
         LocalDate fechaDesde,
         LocalDate fechaHasta,
         ReporteResumenResponse resumen,
-        List<ReporteItemResponse> items,
-        String pdfBase64
+        List<ReporteItemResponse> items
 ) {
 }
 

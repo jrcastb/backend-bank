@@ -10,8 +10,7 @@ public record ReportResultDomain(
         LocalDate fechaHasta,
         BigDecimal totalDebitos,
         BigDecimal totalCreditos,
-        List<ReportItemDomain> items,
-        String pdfBase64
+        List<ReportItemDomain> items
 ) {
 }
 

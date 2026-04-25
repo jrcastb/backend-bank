@@ -343,11 +343,15 @@ paths:
             default: json
       responses:
         "200":
-          description: Reporte generado
+          description: Reporte generado en JSON o PDF
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReporteResponse"
+            application/pdf:
+              schema:
+                type: string
+                format: binary
         "400":
           $ref: "#/components/responses/BadRequest"
         "404":
@@ -693,7 +697,4 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ReporteItemResponse"
-        pdfBase64:
-          type: string
-          nullable: true
 

@@ -18,8 +18,7 @@ public interface ReportMapper {
                 domain.fechaDesde(),
                 domain.fechaHasta(),
                 new ReporteResumenResponse(domain.totalDebitos(), domain.totalCreditos()),
-                domain.items().stream().map(this::toItemResponse).toList(),
-                domain.pdfBase64()
+                domain.items().stream().map(this::toItemResponse).toList()
         );
     }
 }

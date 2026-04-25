@@ -6,5 +6,7 @@ import java.time.LocalDate;
 
 public interface ReportApi {
 
-    ReportResultDomain generateReport(Long clientId, LocalDate fechaDesde, LocalDate fechaHasta, String formato);
+    ReportResultDomain generateReport(Long clientId, LocalDate fechaDesde, LocalDate fechaHasta);
+
+    byte[] generateReportPdf(Long clientId, LocalDate fechaDesde, LocalDate fechaHasta);
 }
