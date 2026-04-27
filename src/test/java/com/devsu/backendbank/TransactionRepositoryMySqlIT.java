@@ -135,6 +135,29 @@ class TransactionRepositoryMySqlIT {
 		assertThat(emptyRangeDebits).isEqualByComparingTo("0.00");
 	}
 
+	@Test
+	void shouldReturnOnlyLatestMovementByAccountOrderedByDateAndId() {
+		Long accountId = tx.execute(status -> {
+			ClientData data = createClientWithAccount("9000000005", "900005");
+
+			createMovement(data.account(), LocalDateTime.of(2026, 4, 1, 9, 0, 0), TransactionType.CREDITO,
+					new BigDecimal("100.00"), new BigDecimal("2100.00"));
+			createMovement(data.account(), LocalDateTime.of(2026, 4, 1, 10, 0, 0), TransactionType.DEBITO,
+					new BigDecimal("-50.00"), new BigDecimal("2050.00"));
+			createMovement(data.account(), LocalDateTime.of(2026, 4, 1, 10, 0, 0), TransactionType.CREDITO,
+					new BigDecimal("25.00"), new BigDecimal("2075.00"));
+
+			return data.account().getId();
+		});
+
+		Transaction latest = tx.execute(status -> transactionRepository
+				.findFirstByAccount_IdOrderByFechaDescIdDesc(accountId)
+				.orElseThrow());
+
+		assertThat(latest.getFecha()).isEqualTo(LocalDateTime.of(2026, 4, 1, 10, 0, 0));
+		assertThat(latest.getValor()).isEqualByComparingTo("25.00");
+	}
+
 	private ClientData createClientWithAccount(String identificacion, String numeroCuenta) {
 		Person person = createPerson(identificacion);
 		Client client = createClient(person);

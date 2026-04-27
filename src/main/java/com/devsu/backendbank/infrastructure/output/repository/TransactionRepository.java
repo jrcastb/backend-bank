@@ -26,8 +26,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     Optional<Transaction> findDetailedById(@Param("id") Long id);
 
     @EntityGraph(attributePaths = {"account"})
-    @Query("select t from Transaction t where t.account.id = :accountId order by t.fecha desc, t.id desc")
-    Optional<Transaction> findLatestDetailedByAccountId(@Param("accountId") Long accountId);
+    Optional<Transaction> findFirstByAccount_IdOrderByFechaDescIdDesc(Long accountId);
 
     @EntityGraph(attributePaths = {"account"})
     @Query("select t from Transaction t where t.account.id = :accountId and t.fecha between :fechaDesde and :fechaHasta")

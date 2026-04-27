@@ -115,7 +115,7 @@ public class BankAdapterRepository implements BankDb {
 
     @Override
     public Optional<TransactionDomain> findLatestTransactionByAccountId(Long accountId) {
-        return transactionRepository.findLatestDetailedByAccountId(accountId)
+        return transactionRepository.findFirstByAccount_IdOrderByFechaDescIdDesc(accountId)
                 .map(transactionDataMapper::toDomain);
     }
 
