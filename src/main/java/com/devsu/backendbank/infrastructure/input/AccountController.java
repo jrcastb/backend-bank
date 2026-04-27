@@ -10,6 +10,7 @@ import com.devsu.backendbank.infrastructure.input.mapper.AccountMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -27,15 +28,11 @@ import java.util.List;
 @RestController
 @RequestMapping("/cuentas")
 @Tag(name = "Cuentas")
+@RequiredArgsConstructor
 public class AccountController {
 
     private final AccountApi accountApi;
     private final AccountMapper accountMapper;
-
-    public AccountController(AccountApi accountApi, AccountMapper accountMapper) {
-        this.accountApi = accountApi;
-        this.accountMapper = accountMapper;
-    }
 
     @GetMapping
     @Operation(summary = "Listar cuentas")

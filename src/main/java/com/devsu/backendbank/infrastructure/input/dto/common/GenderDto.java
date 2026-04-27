@@ -1,6 +1,6 @@
 package com.devsu.backendbank.infrastructure.input.dto.common;
 
-import com.devsu.backendbank.domain.model.GenderDomain;
+import com.devsu.backendbank.domain.enums.GenderDomain;
 
 public enum GenderDto {
     MASCULINO,

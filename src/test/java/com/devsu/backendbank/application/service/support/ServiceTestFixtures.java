@@ -1,12 +1,12 @@
 package com.devsu.backendbank.application.service.support;
 
 import com.devsu.backendbank.domain.model.AccountDomain;
-import com.devsu.backendbank.domain.model.AccountTypeDomain;
+import com.devsu.backendbank.domain.enums.AccountTypeDomain;
 import com.devsu.backendbank.domain.model.ClientDomain;
-import com.devsu.backendbank.domain.model.GenderDomain;
+import com.devsu.backendbank.domain.enums.GenderDomain;
 import com.devsu.backendbank.domain.model.PersonDomain;
 import com.devsu.backendbank.domain.model.TransactionDomain;
-import com.devsu.backendbank.domain.model.TransactionTypeDomain;
+import com.devsu.backendbank.domain.enums.TransactionTypeDomain;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -22,6 +22,8 @@ public final class ServiceTestFixtures {
 
     public static final String IDENTIFICACION = "0912345678";
     public static final String ANOTHER_IDENTIFICACION = "0999999999";
+    public static final String CLIENTE_NOMBRE = "Jose Castillo";
+    public static final String ANOTHER_CLIENTE_NOMBRE = "Jose Castillo Actualizado";
     public static final String NUMERO_CUENTA = "478758";
     public static final String ANOTHER_NUMERO_CUENTA = "225487";
 
@@ -41,7 +43,7 @@ public final class ServiceTestFixtures {
     public static PersonDomain currentPerson() {
         return new PersonDomain(
                 PERSON_ID,
-                "Jose Castillo",
+                CLIENTE_NOMBRE,
                 GenderDomain.MASCULINO,
                 29,
                 IDENTIFICACION,
@@ -55,7 +57,7 @@ public final class ServiceTestFixtures {
     public static PersonDomain incomingPerson() {
         return new PersonDomain(
                 999L,
-                "Jose Castillo Actualizado",
+                ANOTHER_CLIENTE_NOMBRE,
                 GenderDomain.MASCULINO,
                 30,
                 ANOTHER_IDENTIFICACION,
@@ -97,7 +99,8 @@ public final class ServiceTestFixtures {
                 SALDO_INICIAL,
                 true,
                 CREATED_AT,
-                UPDATED_AT
+                UPDATED_AT,
+                CLIENTE_NOMBRE
         );
     }
 
@@ -110,7 +113,8 @@ public final class ServiceTestFixtures {
                 SALDO_INICIAL,
                 false,
                 CREATED_AT,
-                UPDATED_AT
+                UPDATED_AT,
+                CLIENTE_NOMBRE
         );
     }
 
@@ -123,7 +127,8 @@ public final class ServiceTestFixtures {
                 new BigDecimal("1500.00"),
                 false,
                 null,
-                null
+                null,
+                ANOTHER_CLIENTE_NOMBRE
         );
     }
 
@@ -135,7 +140,8 @@ public final class ServiceTestFixtures {
                 TransactionTypeDomain.CREDITO,
                 CREDITO_500,
                 new BigDecimal("1700.00"),
-                CREATED_AT
+                CREATED_AT,
+                NUMERO_CUENTA
         );
     }
 
@@ -147,7 +153,8 @@ public final class ServiceTestFixtures {
                 TransactionTypeDomain.CREDITO,
                 CREDITO_500,
                 null,
-                null
+                null,
+                NUMERO_CUENTA
         );
     }
 
@@ -159,7 +166,8 @@ public final class ServiceTestFixtures {
                 TransactionTypeDomain.DEBITO,
                 DEBITO_300,
                 null,
-                null
+                null,
+                NUMERO_CUENTA
         );
     }
 }

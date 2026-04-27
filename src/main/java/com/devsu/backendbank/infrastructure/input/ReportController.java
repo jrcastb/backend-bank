@@ -7,6 +7,7 @@ import com.devsu.backendbank.infrastructure.input.dto.report.ReporteResponse;
 import com.devsu.backendbank.infrastructure.input.mapper.ReportMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -21,16 +22,11 @@ import java.time.LocalDate;
 @RestController
 @RequestMapping("/reportes")
 @Tag(name = "Reportes")
+@RequiredArgsConstructor
 public class ReportController {
 
     private final ReportApi reportApi;
     private final ReportMapper reportMapper;
-
-    public ReportController(ReportApi reportApi,
-                            ReportMapper reportMapper) {
-        this.reportApi = reportApi;
-        this.reportMapper = reportMapper;
-    }
 
     @GetMapping
     @Operation(summary = "Generar reporte por cliente y rango de fechas")

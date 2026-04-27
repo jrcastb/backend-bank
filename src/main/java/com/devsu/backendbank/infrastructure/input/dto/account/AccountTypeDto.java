@@ -1,6 +1,6 @@
 package com.devsu.backendbank.infrastructure.input.dto.account;
 
-import com.devsu.backendbank.domain.model.AccountTypeDomain;
+import com.devsu.backendbank.domain.enums.AccountTypeDomain;
 
 public enum AccountTypeDto {
     AHORROS,

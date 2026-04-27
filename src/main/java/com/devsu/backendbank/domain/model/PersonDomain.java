@@ -1,5 +1,7 @@
 package com.devsu.backendbank.domain.model;
 
+import com.devsu.backendbank.domain.enums.GenderDomain;
+
 import java.time.LocalDateTime;
 
 public record PersonDomain(

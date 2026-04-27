@@ -18,19 +18,29 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 
     boolean existsByNumeroCuentaAndIdNot(String numeroCuenta, Long id);
 
-    Optional<Account> findByNumeroCuenta(String numeroCuenta);
+    @EntityGraph(attributePaths = {"client", "client.person"})
+    @Query("select a from Account a where a.id = :id")
+    Optional<Account> findDetailedById(@Param("id") Long id);
+
+    @EntityGraph(attributePaths = {"client", "client.person"})
+    @Query("select a from Account a where a.numeroCuenta = :numeroCuenta")
+    Optional<Account> findDetailedByNumeroCuenta(@Param("numeroCuenta") String numeroCuenta);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select a from Account a where a.id = :id")
+    @EntityGraph(attributePaths = {"client", "client.person"})
     Optional<Account> findByIdForUpdate(@Param("id") Long id);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select a from Account a where a.numeroCuenta = :numeroCuenta")
+    @EntityGraph(attributePaths = {"client", "client.person"})
     Optional<Account> findByNumeroCuentaForUpdate(@Param("numeroCuenta") String numeroCuenta);
 
     @EntityGraph(attributePaths = {"client", "client.person"})
-    Page<Account> findAll(Pageable pageable);
+    @Query("select a from Account a")
+    Page<Account> findAllDetailed(Pageable pageable);
 
     @EntityGraph(attributePaths = {"client", "client.person"})
-    Page<Account> findByClientId(Long clientId, Pageable pageable);
+    @Query("select a from Account a where a.client.id = :clientId")
+    Page<Account> findByClientIdDetailed(@Param("clientId") Long clientId, Pageable pageable);
 }

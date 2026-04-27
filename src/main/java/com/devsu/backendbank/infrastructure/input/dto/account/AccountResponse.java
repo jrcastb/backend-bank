@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 
 public record AccountResponse(
         Long id,
-        Long clienteId,
+        String nombreCliente,
         String numeroCuenta,
         AccountTypeDto tipoCuenta,
         BigDecimal saldoInicial,

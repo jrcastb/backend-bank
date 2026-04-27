@@ -10,6 +10,7 @@ import org.mapstruct.Mapping;
 public interface TransactionDataMapper {
 
     @Mapping(target = "accountId", source = "account.id")
+    @Mapping(target = "numeroCuenta", source = "account.numeroCuenta")
     TransactionDomain toDomain(Transaction entity);
 
     @Mapping(target = "account", source = "accountId")

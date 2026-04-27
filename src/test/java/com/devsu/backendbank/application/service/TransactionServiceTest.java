@@ -3,7 +3,7 @@ package com.devsu.backendbank.application.service;
 import com.devsu.backendbank.application.output.port.BankDb;
 import com.devsu.backendbank.domain.model.AccountDomain;
 import com.devsu.backendbank.domain.model.TransactionDomain;
-import com.devsu.backendbank.domain.model.TransactionTypeDomain;
+import com.devsu.backendbank.domain.enums.TransactionTypeDomain;
 import com.devsu.backendbank.infrastructure.exception.BusinessException;
 import com.devsu.backendbank.infrastructure.exception.message.BusinessErrorMessage;
 import org.junit.jupiter.api.Nested;
@@ -40,7 +40,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -117,7 +116,8 @@ class TransactionServiceTest {
                     TransactionTypeDomain.CREDITO,
                     invalidAmount,
                     null,
-                    null
+                    null,
+                    currentAccount().numeroCuenta()
             );
 
             assertBusinessException(() -> transactionService.createTransaction(input), BusinessErrorMessage.INVALID_TRANSACTION_AMOUNT);
@@ -139,7 +139,8 @@ class TransactionServiceTest {
                         persisted.tipoMovimiento(),
                         persisted.valor(),
                         persisted.saldo(),
-                        persisted.createdAt()
+                        persisted.createdAt(),
+                        persisted.numeroCuenta()
                 );
             });
 
@@ -157,6 +158,7 @@ class TransactionServiceTest {
             assertThat(persisted.valor()).isEqualByComparingTo(CREDITO_500);
             assertThat(persisted.saldo()).isEqualByComparingTo(SALDO_INICIAL.add(CREDITO_500));
             assertThat(persisted.createdAt()).isNull();
+            assertThat(persisted.numeroCuenta()).isEqualTo(account.numeroCuenta());
             assertThat(persisted.fecha()).isBetween(before, after);
             verify(bankDb, never()).sumDailyDebitsByAccount(anyLong(), any(), any());
         }
@@ -199,7 +201,8 @@ class TransactionServiceTest {
                     TransactionTypeDomain.CREDITO,
                     CREDITO_500,
                     new BigDecimal("200.00"),
-                    LocalDateTime.now(ZoneOffset.UTC)
+                    LocalDateTime.now(ZoneOffset.UTC),
+                    currentAccount().numeroCuenta()
             )));
 
             assertBusinessException(() -> transactionService.createTransaction(debitTransactionInput()), BusinessErrorMessage.INSUFFICIENT_FUNDS);

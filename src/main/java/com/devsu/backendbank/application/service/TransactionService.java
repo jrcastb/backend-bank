@@ -4,7 +4,7 @@ import com.devsu.backendbank.application.input.port.TransactionApi;
 import com.devsu.backendbank.application.output.port.BankDb;
 import com.devsu.backendbank.domain.model.AccountDomain;
 import com.devsu.backendbank.domain.model.TransactionDomain;
-import com.devsu.backendbank.domain.model.TransactionTypeDomain;
+import com.devsu.backendbank.domain.enums.TransactionTypeDomain;
 import com.devsu.backendbank.infrastructure.exception.BusinessException;
 import com.devsu.backendbank.infrastructure.exception.message.BusinessErrorMessage;
 import lombok.RequiredArgsConstructor;
@@ -65,7 +65,8 @@ public class TransactionService implements TransactionApi {
                 transaction.tipoMovimiento(),
                 transaction.valor(),
                 newBalance,
-                null
+                null,
+                account.numeroCuenta()
         );
 
         return bankDb.saveTransaction(toSave);

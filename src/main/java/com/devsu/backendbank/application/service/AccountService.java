@@ -75,7 +75,8 @@ public class AccountService implements AccountApi {
                 replacement.saldoInicial(),
                 replacement.estado(),
                 current.createdAt(),
-                current.updatedAt()
+                current.updatedAt(),
+                current.nombreCliente()
         );
     }
 }

@@ -1,5 +1,7 @@
 package com.devsu.backendbank.domain.model;
 
+import com.devsu.backendbank.domain.enums.AccountTypeDomain;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -11,7 +13,8 @@ public record AccountDomain(
         BigDecimal saldoInicial,
         Boolean estado,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        String nombreCliente
 ) {
 }
 

@@ -8,6 +8,7 @@ import com.devsu.backendbank.infrastructure.input.mapper.TransactionMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -23,16 +24,11 @@ import java.util.List;
 @RestController
 @RequestMapping("/movimientos")
 @Tag(name = "Movimientos")
+@RequiredArgsConstructor
 public class TransactionController {
 
     private final TransactionApi transactionApi;
     private final TransactionMapper transactionMapper;
-
-    public TransactionController(TransactionApi transactionApi,
-                                 TransactionMapper transactionMapper) {
-        this.transactionApi = transactionApi;
-        this.transactionMapper = transactionMapper;
-    }
 
     @GetMapping
     @Operation(summary = "Listar movimientos")

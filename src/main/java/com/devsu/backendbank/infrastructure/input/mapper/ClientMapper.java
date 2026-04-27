@@ -1,7 +1,7 @@
 package com.devsu.backendbank.infrastructure.input.mapper;
 
 import com.devsu.backendbank.domain.model.ClientDomain;
-import com.devsu.backendbank.domain.model.GenderDomain;
+import com.devsu.backendbank.domain.enums.GenderDomain;
 import com.devsu.backendbank.domain.model.PersonDomain;
 import com.devsu.backendbank.infrastructure.input.dto.client.ClientCreateRequest;
 import com.devsu.backendbank.infrastructure.input.dto.client.ClientPatchRequest;

@@ -1,6 +1,6 @@
 package com.devsu.backendbank.infrastructure.input.dto.transaction;
 
-import com.devsu.backendbank.domain.model.TransactionTypeDomain;
+import com.devsu.backendbank.domain.enums.TransactionTypeDomain;
 
 public enum TransactionTypeDto {
     CREDIT,

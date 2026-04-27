@@ -70,37 +70,37 @@ public class BankAdapterRepository implements BankDb {
 
     @Override
     public Page<AccountDomain> findAccounts(Pageable pageable) {
-        return accountRepository.findAll(pageable)
+        return accountRepository.findAllDetailed(pageable)
                 .map(accountDataMapper::toDomain);
     }
 
     @Override
     public Page<AccountDomain> findAccountsByClient(Long clientId, Pageable pageable) {
-        return accountRepository.findByClientId(clientId, pageable)
+        return accountRepository.findByClientIdDetailed(clientId, pageable)
                 .map(accountDataMapper::toDomain);
     }
 
     @Override
     public Optional<AccountDomain> findAccountById(Long id) {
-        return accountRepository.findById(id)
+        return accountRepository.findDetailedById(id)
                 .map(accountDataMapper::toDomain);
     }
 
     @Override
     public Optional<AccountDomain> findAccountByNumber(String numeroCuenta) {
-        return accountRepository.findByNumeroCuenta(numeroCuenta)
+        return accountRepository.findDetailedByNumeroCuenta(numeroCuenta)
                 .map(accountDataMapper::toDomain);
     }
 
     @Override
     public Page<TransactionDomain> findTransactions(Pageable pageable) {
-        return transactionRepository.findAll(pageable)
+        return transactionRepository.findAllDetailed(pageable)
                 .map(transactionDataMapper::toDomain);
     }
 
     @Override
     public Optional<TransactionDomain> findTransactionById(Long id) {
-        return transactionRepository.findById(id)
+        return transactionRepository.findDetailedById(id)
                 .map(transactionDataMapper::toDomain);
     }
 
@@ -109,13 +109,13 @@ public class BankAdapterRepository implements BankDb {
                                                                           LocalDateTime fechaDesde,
                                                                           LocalDateTime fechaHasta,
                                                                           Pageable pageable) {
-        return transactionRepository.findByAccount_IdAndFechaBetween(accountId, fechaDesde, fechaHasta, pageable)
+        return transactionRepository.findDetailedByAccountIdAndFechaBetween(accountId, fechaDesde, fechaHasta, pageable)
                 .map(transactionDataMapper::toDomain);
     }
 
     @Override
     public Optional<TransactionDomain> findLatestTransactionByAccountId(Long accountId) {
-        return transactionRepository.findTopByAccount_IdOrderByFechaDescIdDesc(accountId)
+        return transactionRepository.findLatestDetailedByAccountId(accountId)
                 .map(transactionDataMapper::toDomain);
     }
 
@@ -180,7 +180,9 @@ public class BankAdapterRepository implements BankDb {
         try {
             var entity = accountDataMapper.toEntity(accountDomain);
             var saved = accountRepository.save(entity);
-            return accountDataMapper.toDomain(saved);
+            return accountRepository.findDetailedById(saved.getId())
+                    .map(accountDataMapper::toDomain)
+                    .orElseThrow(() -> new TechnicalException(TechnicalErrorMessage.ENTITY_PERSISTENCE_ERROR));
         } catch (Exception e) {
             log.error("Error al guardar/actualizar cuenta", e);
             throw new TechnicalException(e, TechnicalErrorMessage.ENTITY_PERSISTENCE_ERROR);
@@ -192,7 +194,9 @@ public class BankAdapterRepository implements BankDb {
         try {
             var entity = transactionDataMapper.toEntity(transactionDomain);
             var saved = transactionRepository.save(entity);
-            return transactionDataMapper.toDomain(saved);
+            return transactionRepository.findDetailedById(saved.getId())
+                    .map(transactionDataMapper::toDomain)
+                    .orElseThrow(() -> new TechnicalException(TechnicalErrorMessage.TRANSACTION_FAILURE));
         } catch (Exception e) {
             log.error("Error al registrar movimiento", e);
             throw new TechnicalException(e, TechnicalErrorMessage.TRANSACTION_FAILURE);

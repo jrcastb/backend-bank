@@ -1,7 +1,7 @@
 package com.devsu.backendbank.infrastructure.input.mapper;
 
 import com.devsu.backendbank.domain.model.TransactionDomain;
-import com.devsu.backendbank.domain.model.TransactionTypeDomain;
+import com.devsu.backendbank.domain.enums.TransactionTypeDomain;
 import com.devsu.backendbank.infrastructure.input.dto.transaction.TransactionCreateRequest;
 import com.devsu.backendbank.infrastructure.input.dto.transaction.TransactionResponse;
 import com.devsu.backendbank.infrastructure.input.dto.transaction.TransactionTypeDto;
@@ -20,9 +20,10 @@ public interface TransactionMapper {
     @Mapping(target = "fecha", ignore = true)
     @Mapping(target = "saldo", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "numeroCuenta", ignore = true)
     TransactionDomain toDomain(TransactionCreateRequest request);
 
-    @Mapping(target = "cuentaId", source = "accountId")
+    @Mapping(target = "numeroCuenta", source = "numeroCuenta")
     @Mapping(target = "tipoMovimiento", source = "tipoMovimiento")
     TransactionResponse toResponse(TransactionDomain domain);
 

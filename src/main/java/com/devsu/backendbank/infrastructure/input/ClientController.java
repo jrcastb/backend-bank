@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -29,15 +30,11 @@ import java.util.List;
 @RestController
 @RequestMapping("/clientes")
 @Tag(name = "Clientes")
+@RequiredArgsConstructor
 public class ClientController {
 
     private final ClientApi clientApi;
     private final ClientMapper clientMapper;
-
-    public ClientController(ClientApi clientApi, ClientMapper clientMapper) {
-        this.clientApi = clientApi;
-        this.clientMapper = clientMapper;
-    }
 
     @GetMapping
     @Operation(summary = "Listar clientes")

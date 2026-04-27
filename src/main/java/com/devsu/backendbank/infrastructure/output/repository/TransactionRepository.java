@@ -13,16 +13,28 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+import org.springframework.data.jpa.repository.EntityGraph;
+
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
 
-    Page<Transaction> findAll(Pageable pageable);
+    @EntityGraph(attributePaths = {"account"})
+    @Query("select t from Transaction t")
+    Page<Transaction> findAllDetailed(Pageable pageable);
 
-    Optional<Transaction> findTopByAccount_IdOrderByFechaDescIdDesc(Long accountId);
+    @EntityGraph(attributePaths = {"account"})
+    @Query("select t from Transaction t where t.id = :id")
+    Optional<Transaction> findDetailedById(@Param("id") Long id);
 
-    Page<Transaction> findByAccount_IdAndFechaBetween(Long accountId,
-                                                      LocalDateTime fechaDesde,
-                                                      LocalDateTime fechaHasta,
-                                                      Pageable pageable);
+    @EntityGraph(attributePaths = {"account"})
+    @Query("select t from Transaction t where t.account.id = :accountId order by t.fecha desc, t.id desc")
+    Optional<Transaction> findLatestDetailedByAccountId(@Param("accountId") Long accountId);
+
+    @EntityGraph(attributePaths = {"account"})
+    @Query("select t from Transaction t where t.account.id = :accountId and t.fecha between :fechaDesde and :fechaHasta")
+    Page<Transaction> findDetailedByAccountIdAndFechaBetween(@Param("accountId") Long accountId,
+                                                             @Param("fechaDesde") LocalDateTime fechaDesde,
+                                                             @Param("fechaHasta") LocalDateTime fechaHasta,
+                                                             Pageable pageable);
 
     @Query("""
             select coalesce(sum(abs(t.valor)), 0)

@@ -595,9 +595,8 @@ components:
         id:
           type: integer
           format: int64
-        clienteId:
-          type: integer
-          format: int64
+        nombreCliente:
+          type: string
         numeroCuenta:
           type: string
         tipoCuenta:
@@ -607,7 +606,7 @@ components:
           format: double
         estado:
           type: boolean
-      required: [id, clienteId, numeroCuenta, tipoCuenta, saldoInicial, estado]
+      required: [id, nombreCliente, numeroCuenta, tipoCuenta, saldoInicial, estado]
 
     TransactionCreateRequest:
       type: object
@@ -629,9 +628,8 @@ components:
         id:
           type: integer
           format: int64
-        cuentaId:
-          type: integer
-          format: int64
+        numeroCuenta:
+          type: string
         fecha:
           type: string
           format: date-time
@@ -643,7 +641,7 @@ components:
         saldo:
           type: number
           format: double
-      required: [id, cuentaId, fecha, tipoMovimiento, valor, saldo]
+      required: [id, numeroCuenta, fecha, tipoMovimiento, valor, saldo]
 
     ReporteItemResponse:
       type: object

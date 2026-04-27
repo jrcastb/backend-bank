@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 
 public record TransactionResponse(
         Long id,
-        Long cuentaId,
+        String numeroCuenta,
         LocalDateTime fecha,
         TransactionTypeDto tipoMovimiento,
         BigDecimal valor,

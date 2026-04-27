@@ -21,7 +21,6 @@ import java.util.Optional;
 
 import static com.devsu.backendbank.application.service.support.ServiceTestFixtures.ACCOUNT_ID;
 import static com.devsu.backendbank.application.service.support.ServiceTestFixtures.ANOTHER_NUMERO_CUENTA;
-import static com.devsu.backendbank.application.service.support.ServiceTestFixtures.CLIENT_ID;
 import static com.devsu.backendbank.application.service.support.ServiceTestFixtures.currentAccount;
 import static com.devsu.backendbank.application.service.support.ServiceTestFixtures.currentClient;
 import static com.devsu.backendbank.application.service.support.ServiceTestFixtures.incomingAccount;
@@ -135,6 +134,7 @@ class AccountServiceTest {
             assertThat(persisted.id()).isEqualTo(current.id());
             assertThat(persisted.createdAt()).isEqualTo(current.createdAt());
             assertThat(persisted.updatedAt()).isEqualTo(current.updatedAt());
+            assertThat(persisted.nombreCliente()).isEqualTo(current.nombreCliente());
             assertThat(persisted.clientId()).isEqualTo(incoming.clientId());
             assertThat(persisted.numeroCuenta()).isEqualTo(incoming.numeroCuenta());
             assertThat(persisted.tipoCuenta()).isEqualTo(incoming.tipoCuenta());
@@ -190,7 +190,8 @@ class AccountServiceTest {
                     current.saldoInicial(),
                     current.estado(),
                     null,
-                    null
+                    null,
+                    current.nombreCliente()
             );
             AccountDomain saved = currentAccount();
 
@@ -210,6 +211,7 @@ class AccountServiceTest {
             assertThat(persisted.id()).isEqualTo(current.id());
             assertThat(persisted.createdAt()).isEqualTo(current.createdAt());
             assertThat(persisted.updatedAt()).isEqualTo(current.updatedAt());
+            assertThat(persisted.nombreCliente()).isEqualTo(current.nombreCliente());
 
             if (patchMode == PatchMode.SAME_NUMBER) {
                 verify(bankDb, never()).accountExistsByNumeroCuentaExcludingId(any(), any());

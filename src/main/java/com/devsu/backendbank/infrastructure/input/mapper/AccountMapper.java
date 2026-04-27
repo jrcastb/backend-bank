@@ -1,7 +1,7 @@
 package com.devsu.backendbank.infrastructure.input.mapper;
 
 import com.devsu.backendbank.domain.model.AccountDomain;
-import com.devsu.backendbank.domain.model.AccountTypeDomain;
+import com.devsu.backendbank.domain.enums.AccountTypeDomain;
 import com.devsu.backendbank.infrastructure.input.dto.account.AccountCreateRequest;
 import com.devsu.backendbank.infrastructure.input.dto.account.AccountPatchRequest;
 import com.devsu.backendbank.infrastructure.input.dto.account.AccountResponse;
@@ -19,6 +19,7 @@ public interface AccountMapper {
     @Mapping(target = "estado", expression = "java(request.estado() == null || request.estado())")
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "nombreCliente", ignore = true)
     AccountDomain toDomain(AccountCreateRequest request);
 
     @Mapping(target = "id", source = "id")
@@ -27,6 +28,7 @@ public interface AccountMapper {
     @Mapping(target = "estado", expression = "java(request.estado() == null || request.estado())")
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "nombreCliente", ignore = true)
     AccountDomain toDomain(Long id, AccountUpdateRequest request);
 
     default AccountDomain merge(AccountDomain current, AccountPatchRequest patch) {
@@ -38,11 +40,12 @@ public interface AccountMapper {
                 patch.saldoInicial() != null ? patch.saldoInicial() : current.saldoInicial(),
                 patch.estado() != null ? patch.estado() : current.estado(),
                 current.createdAt(),
-                current.updatedAt()
+                current.updatedAt(),
+                current.nombreCliente()
         );
     }
 
-    @Mapping(target = "clienteId", source = "clientId")
+    @Mapping(target = "nombreCliente", source = "nombreCliente")
     @Mapping(target = "tipoCuenta", source = "tipoCuenta")
     AccountResponse toResponse(AccountDomain domain);
 

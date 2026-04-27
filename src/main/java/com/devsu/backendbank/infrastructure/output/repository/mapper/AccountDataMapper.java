@@ -10,6 +10,7 @@ import org.mapstruct.Mapping;
 public interface AccountDataMapper {
 
     @Mapping(target = "clientId", source = "client.id")
+    @Mapping(target = "nombreCliente", source = "client.person.nombre")
     AccountDomain toDomain(Account entity);
 
     @Mapping(target = "client", source = "clientId")
