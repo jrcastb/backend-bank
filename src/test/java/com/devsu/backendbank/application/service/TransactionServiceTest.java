@@ -1,11 +1,17 @@
 package com.devsu.backendbank.application.service;
 
-import com.devsu.backendbank.application.output.port.BankDb;
+import com.devsu.backendbank.application.output.port.AccountLockPort;
+import com.devsu.backendbank.application.output.port.TransactionCommandPort;
+import com.devsu.backendbank.application.output.port.TransactionQueryPort;
+import com.devsu.backendbank.application.service.transaction.CreditTransactionRuleStrategy;
+import com.devsu.backendbank.application.service.transaction.DebitTransactionRuleStrategy;
+import com.devsu.backendbank.application.service.transaction.TransactionRuleStrategyResolver;
 import com.devsu.backendbank.domain.model.AccountDomain;
 import com.devsu.backendbank.domain.model.TransactionDomain;
 import com.devsu.backendbank.domain.enums.TransactionTypeDomain;
 import com.devsu.backendbank.infrastructure.exception.BusinessException;
 import com.devsu.backendbank.infrastructure.exception.message.BusinessErrorMessage;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,7 +19,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
@@ -50,10 +55,24 @@ class TransactionServiceTest {
     private static final Pageable UNPAGED = Pageable.unpaged();
 
     @Mock
-    private BankDb bankDb;
+    private AccountLockPort accountLockPort;
 
-    @InjectMocks
+    @Mock
+    private TransactionQueryPort transactionQueryPort;
+
+    @Mock
+    private TransactionCommandPort transactionCommandPort;
+
     private TransactionService transactionService;
+
+    @BeforeEach
+    void setUp() {
+        TransactionRuleStrategyResolver resolver = new TransactionRuleStrategyResolver(java.util.List.of(
+                new CreditTransactionRuleStrategy(),
+                new DebitTransactionRuleStrategy(transactionQueryPort)
+        ));
+        transactionService = new TransactionService(accountLockPort, transactionQueryPort, transactionCommandPort, resolver);
+    }
 
     @Nested
     class FindTransactions {
@@ -61,7 +80,7 @@ class TransactionServiceTest {
         @Test
         void shouldReturnTransactionsPage() {
             TransactionDomain transaction = latestTransaction();
-            when(bankDb.findTransactions(UNPAGED)).thenReturn(new PageImpl<>(java.util.List.of(transaction)));
+            when(transactionQueryPort.findTransactions(UNPAGED)).thenReturn(new PageImpl<>(java.util.List.of(transaction)));
 
             var result = transactionService.findTransactions(UNPAGED);
 
@@ -71,7 +90,7 @@ class TransactionServiceTest {
         @Test
         void shouldReturnTransactionById() {
             TransactionDomain transaction = latestTransaction();
-            when(bankDb.findTransactionById(TRANSACTION_ID)).thenReturn(Optional.of(transaction));
+            when(transactionQueryPort.findTransactionById(TRANSACTION_ID)).thenReturn(Optional.of(transaction));
 
             TransactionDomain result = transactionService.findTransactionById(TRANSACTION_ID);
 
@@ -80,7 +99,7 @@ class TransactionServiceTest {
 
         @Test
         void shouldFailWhenTransactionDoesNotExist() {
-            when(bankDb.findTransactionById(TRANSACTION_ID)).thenReturn(Optional.empty());
+            when(transactionQueryPort.findTransactionById(TRANSACTION_ID)).thenReturn(Optional.empty());
 
             assertBusinessException(() -> transactionService.findTransactionById(TRANSACTION_ID), BusinessErrorMessage.NO_MOVEMENTS_FOUND);
         }
@@ -91,24 +110,24 @@ class TransactionServiceTest {
 
         @Test
         void shouldFailWhenAccountDoesNotExist() {
-            when(bankDb.findAccountByIdForUpdate(ACCOUNT_ID)).thenReturn(Optional.empty());
+            when(accountLockPort.findAccountByIdForUpdate(ACCOUNT_ID)).thenReturn(Optional.empty());
 
             assertBusinessException(() -> transactionService.createTransaction(creditTransactionInput()), BusinessErrorMessage.ACCOUNT_NOT_FOUND);
-            verify(bankDb, never()).saveTransaction(any());
+            verify(transactionCommandPort, never()).saveTransaction(any());
         }
 
         @Test
         void shouldFailWhenAccountIsInactive() {
-            when(bankDb.findAccountByIdForUpdate(ACCOUNT_ID)).thenReturn(Optional.of(inactiveAccount()));
+            when(accountLockPort.findAccountByIdForUpdate(ACCOUNT_ID)).thenReturn(Optional.of(inactiveAccount()));
 
             assertBusinessException(() -> transactionService.createTransaction(creditTransactionInput()), BusinessErrorMessage.ACCOUNT_INACTIVE);
-            verify(bankDb, never()).saveTransaction(any());
+            verify(transactionCommandPort, never()).saveTransaction(any());
         }
 
         @ParameterizedTest
         @MethodSource("invalidAmounts")
         void shouldFailWhenAmountIsNullOrZero(BigDecimal invalidAmount) {
-            when(bankDb.findAccountByIdForUpdate(ACCOUNT_ID)).thenReturn(Optional.of(currentAccount()));
+            when(accountLockPort.findAccountByIdForUpdate(ACCOUNT_ID)).thenReturn(Optional.of(currentAccount()));
             TransactionDomain input = new TransactionDomain(
                     null,
                     ACCOUNT_ID,
@@ -121,16 +140,16 @@ class TransactionServiceTest {
             );
 
             assertBusinessException(() -> transactionService.createTransaction(input), BusinessErrorMessage.INVALID_TRANSACTION_AMOUNT);
-            verify(bankDb, never()).saveTransaction(any());
+            verify(transactionCommandPort, never()).saveTransaction(any());
         }
 
         @Test
         void shouldCreateCreditUsingInitialBalanceWhenThereIsNoPreviousTransaction() {
             AccountDomain account = currentAccount();
             TransactionDomain input = creditTransactionInput();
-            when(bankDb.findAccountByIdForUpdate(ACCOUNT_ID)).thenReturn(Optional.of(account));
-            when(bankDb.findLatestTransactionByAccountId(ACCOUNT_ID)).thenReturn(Optional.empty());
-            when(bankDb.saveTransaction(any(TransactionDomain.class))).thenAnswer(invocation -> {
+            when(accountLockPort.findAccountByIdForUpdate(ACCOUNT_ID)).thenReturn(Optional.of(account));
+            when(transactionQueryPort.findLatestTransactionByAccountId(ACCOUNT_ID)).thenReturn(Optional.empty());
+            when(transactionCommandPort.saveTransaction(any(TransactionDomain.class))).thenAnswer(invocation -> {
                 TransactionDomain persisted = invocation.getArgument(0);
                 return new TransactionDomain(
                         TRANSACTION_ID,
@@ -149,7 +168,7 @@ class TransactionServiceTest {
             LocalDateTime after = LocalDateTime.now(ZoneOffset.UTC);
 
             ArgumentCaptor<TransactionDomain> captor = ArgumentCaptor.forClass(TransactionDomain.class);
-            verify(bankDb).saveTransaction(captor.capture());
+            verify(transactionCommandPort).saveTransaction(captor.capture());
             TransactionDomain persisted = captor.getValue();
 
             assertThat(result.id()).isEqualTo(TRANSACTION_ID);
@@ -160,31 +179,31 @@ class TransactionServiceTest {
             assertThat(persisted.createdAt()).isNull();
             assertThat(persisted.numeroCuenta()).isEqualTo(account.numeroCuenta());
             assertThat(persisted.fecha()).isBetween(before, after);
-            verify(bankDb, never()).sumDailyDebitsByAccount(anyLong(), any(), any());
+            verify(transactionQueryPort, never()).sumDailyDebitsByAccount(anyLong(), any(), any());
         }
 
         @Test
         void shouldCreateDebitUsingLatestBalanceWhenRulesPass() {
             AccountDomain account = currentAccount();
             TransactionDomain input = debitTransactionInput();
-            when(bankDb.findAccountByIdForUpdate(ACCOUNT_ID)).thenReturn(Optional.of(account));
-            when(bankDb.findLatestTransactionByAccountId(ACCOUNT_ID)).thenReturn(Optional.of(latestTransaction()));
-            when(bankDb.sumDailyDebitsByAccount(anyLong(), any(), any())).thenReturn(new BigDecimal("600.00"));
-            when(bankDb.saveTransaction(any(TransactionDomain.class))).thenAnswer(invocation -> invocation.getArgument(0));
+            when(accountLockPort.findAccountByIdForUpdate(ACCOUNT_ID)).thenReturn(Optional.of(account));
+            when(transactionQueryPort.findLatestTransactionByAccountId(ACCOUNT_ID)).thenReturn(Optional.of(latestTransaction()));
+            when(transactionQueryPort.sumDailyDebitsByAccount(anyLong(), any(), any())).thenReturn(new BigDecimal("600.00"));
+            when(transactionCommandPort.saveTransaction(any(TransactionDomain.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
             TransactionDomain result = transactionService.createTransaction(input);
 
             assertThat(result.saldo()).isEqualByComparingTo("1400.00");
             assertThat(result.valor()).isEqualByComparingTo(DEBITO_300);
-            verify(bankDb).sumDailyDebitsByAccount(anyLong(), any(), any());
+            verify(transactionQueryPort).sumDailyDebitsByAccount(anyLong(), any(), any());
         }
 
         @Test
         void shouldAllowDebitExactlyAtDailyLimit() {
-            when(bankDb.findAccountByIdForUpdate(ACCOUNT_ID)).thenReturn(Optional.of(currentAccount()));
-            when(bankDb.findLatestTransactionByAccountId(ACCOUNT_ID)).thenReturn(Optional.of(latestTransaction()));
-            when(bankDb.sumDailyDebitsByAccount(anyLong(), any(), any())).thenReturn(LIMITE_DIARIO.subtract(DEBITO_300.abs()));
-            when(bankDb.saveTransaction(any(TransactionDomain.class))).thenAnswer(invocation -> invocation.getArgument(0));
+            when(accountLockPort.findAccountByIdForUpdate(ACCOUNT_ID)).thenReturn(Optional.of(currentAccount()));
+            when(transactionQueryPort.findLatestTransactionByAccountId(ACCOUNT_ID)).thenReturn(Optional.of(latestTransaction()));
+            when(transactionQueryPort.sumDailyDebitsByAccount(anyLong(), any(), any())).thenReturn(LIMITE_DIARIO.subtract(DEBITO_300.abs()));
+            when(transactionCommandPort.saveTransaction(any(TransactionDomain.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
             TransactionDomain result = transactionService.createTransaction(debitTransactionInput());
 
@@ -193,8 +212,8 @@ class TransactionServiceTest {
 
         @Test
         void shouldFailWhenFundsAreInsufficient() {
-            when(bankDb.findAccountByIdForUpdate(ACCOUNT_ID)).thenReturn(Optional.of(currentAccount()));
-            when(bankDb.findLatestTransactionByAccountId(ACCOUNT_ID)).thenReturn(Optional.of(new TransactionDomain(
+            when(accountLockPort.findAccountByIdForUpdate(ACCOUNT_ID)).thenReturn(Optional.of(currentAccount()));
+            when(transactionQueryPort.findLatestTransactionByAccountId(ACCOUNT_ID)).thenReturn(Optional.of(new TransactionDomain(
                     TRANSACTION_ID,
                     ACCOUNT_ID,
                     LocalDateTime.now(ZoneOffset.UTC),
@@ -206,18 +225,18 @@ class TransactionServiceTest {
             )));
 
             assertBusinessException(() -> transactionService.createTransaction(debitTransactionInput()), BusinessErrorMessage.INSUFFICIENT_FUNDS);
-            verify(bankDb, never()).sumDailyDebitsByAccount(anyLong(), any(), any());
-            verify(bankDb, never()).saveTransaction(any());
+            verify(transactionQueryPort, never()).sumDailyDebitsByAccount(anyLong(), any(), any());
+            verify(transactionCommandPort, never()).saveTransaction(any());
         }
 
         @Test
         void shouldFailWhenDailyLimitWouldBeExceeded() {
-            when(bankDb.findAccountByIdForUpdate(ACCOUNT_ID)).thenReturn(Optional.of(currentAccount()));
-            when(bankDb.findLatestTransactionByAccountId(ACCOUNT_ID)).thenReturn(Optional.of(latestTransaction()));
-            when(bankDb.sumDailyDebitsByAccount(anyLong(), any(), any())).thenReturn(new BigDecimal("800.01"));
+            when(accountLockPort.findAccountByIdForUpdate(ACCOUNT_ID)).thenReturn(Optional.of(currentAccount()));
+            when(transactionQueryPort.findLatestTransactionByAccountId(ACCOUNT_ID)).thenReturn(Optional.of(latestTransaction()));
+            when(transactionQueryPort.sumDailyDebitsByAccount(anyLong(), any(), any())).thenReturn(new BigDecimal("800.01"));
 
             assertBusinessException(() -> transactionService.createTransaction(debitTransactionInput()), BusinessErrorMessage.DAILY_LIMIT_EXCEEDED);
-            verify(bankDb, never()).saveTransaction(any());
+            verify(transactionCommandPort, never()).saveTransaction(any());
         }
 
         private static Stream<Arguments> invalidAmounts() {
@@ -233,19 +252,19 @@ class TransactionServiceTest {
 
         @Test
         void shouldDeleteTransactionWhenItExists() {
-            when(bankDb.findTransactionById(TRANSACTION_ID)).thenReturn(Optional.of(latestTransaction()));
+            when(transactionQueryPort.findTransactionById(TRANSACTION_ID)).thenReturn(Optional.of(latestTransaction()));
 
             transactionService.deleteTransaction(TRANSACTION_ID);
 
-            verify(bankDb).deleteTransactionById(TRANSACTION_ID);
+            verify(transactionCommandPort).deleteTransactionById(TRANSACTION_ID);
         }
 
         @Test
         void shouldFailDeletingUnknownTransaction() {
-            when(bankDb.findTransactionById(TRANSACTION_ID)).thenReturn(Optional.empty());
+            when(transactionQueryPort.findTransactionById(TRANSACTION_ID)).thenReturn(Optional.empty());
 
             assertBusinessException(() -> transactionService.deleteTransaction(TRANSACTION_ID), BusinessErrorMessage.NO_MOVEMENTS_FOUND);
-            verify(bankDb, never()).deleteTransactionById(anyLong());
+            verify(transactionCommandPort, never()).deleteTransactionById(anyLong());
         }
     }
 

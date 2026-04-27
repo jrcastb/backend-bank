@@ -1,6 +1,7 @@
 package com.devsu.backendbank.application.service;
 
-import com.devsu.backendbank.application.output.port.BankDb;
+import com.devsu.backendbank.application.output.port.ClientQueryPort;
+import com.devsu.backendbank.application.output.port.ReportQueryPort;
 import com.devsu.backendbank.infrastructure.exception.BusinessException;
 import com.devsu.backendbank.infrastructure.exception.message.BusinessErrorMessage;
 import com.devsu.backendbank.infrastructure.output.repository.entity.AccountType;
@@ -16,7 +17,6 @@ import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -36,7 +36,10 @@ import static org.mockito.Mockito.when;
 class ReportServiceTest {
 
     @Mock
-    private BankDb bankDb;
+    private ClientQueryPort clientQueryPort;
+
+    @Mock
+    private ReportQueryPort reportQueryPort;
 
     @InjectMocks
     private ReportService reportService;
@@ -46,7 +49,7 @@ class ReportServiceTest {
 
         @Test
         void shouldCalculateTotalsForReportData() {
-            when(bankDb.findClientById(CLIENT_ID)).thenReturn(Optional.of(currentClient()));
+            when(clientQueryPort.findClientById(CLIENT_ID)).thenReturn(Optional.of(currentClient()));
 
             TransactionReportProjection debit = movement(
                     LocalDateTime.of(2026, 4, 2, 10, 15),
@@ -61,7 +64,7 @@ class ReportServiceTest {
                     new BigDecimal("2200.00")
             );
 
-            when(bankDb.findReportByClientAndDateRange(eq(CLIENT_ID), any(LocalDateTime.class), any(LocalDateTime.class), eq(Pageable.unpaged())))
+            when(reportQueryPort.findReportByClientAndDateRange(eq(CLIENT_ID), any(LocalDateTime.class), any(LocalDateTime.class), eq(Pageable.unpaged())))
                     .thenReturn(new PageImpl<>(List.of(debit, credit)));
 
             var report = reportService.generateReport(CLIENT_ID, FECHA_DESDE, FECHA_HASTA);
@@ -74,8 +77,8 @@ class ReportServiceTest {
 
         @Test
         void shouldReturnEmptyReportWhenThereAreNoMovements() {
-            when(bankDb.findClientById(CLIENT_ID)).thenReturn(Optional.of(currentClient()));
-            when(bankDb.findReportByClientAndDateRange(eq(CLIENT_ID), any(LocalDateTime.class), any(LocalDateTime.class), eq(Pageable.unpaged())))
+            when(clientQueryPort.findClientById(CLIENT_ID)).thenReturn(Optional.of(currentClient()));
+            when(reportQueryPort.findReportByClientAndDateRange(eq(CLIENT_ID), any(LocalDateTime.class), any(LocalDateTime.class), eq(Pageable.unpaged())))
                     .thenReturn(new PageImpl<>(List.of()));
 
             var report = reportService.generateReport(CLIENT_ID, FECHA_DESDE, FECHA_HASTA);
@@ -95,7 +98,7 @@ class ReportServiceTest {
 
         @Test
         void shouldFailWhenClientDoesNotExist() {
-            when(bankDb.findClientById(CLIENT_ID)).thenReturn(Optional.empty());
+            when(clientQueryPort.findClientById(CLIENT_ID)).thenReturn(Optional.empty());
 
             assertBusinessException(
                     () -> reportService.generateReport(CLIENT_ID, FECHA_DESDE, FECHA_HASTA),
@@ -109,14 +112,14 @@ class ReportServiceTest {
 
         @Test
         void shouldGenerateValidPdfWithMovements() {
-            when(bankDb.findClientById(CLIENT_ID)).thenReturn(Optional.of(currentClient()));
+            when(clientQueryPort.findClientById(CLIENT_ID)).thenReturn(Optional.of(currentClient()));
             TransactionReportProjection projection = movement(
                     LocalDateTime.of(2026, 4, 2, 10, 15),
                     AccountType.CORRIENTE,
                     new BigDecimal("300.00"),
                     new BigDecimal("2300.00")
             );
-            when(bankDb.findReportByClientAndDateRange(eq(CLIENT_ID), any(LocalDateTime.class), any(LocalDateTime.class), eq(Pageable.unpaged())))
+            when(reportQueryPort.findReportByClientAndDateRange(eq(CLIENT_ID), any(LocalDateTime.class), any(LocalDateTime.class), eq(Pageable.unpaged())))
                     .thenReturn(new PageImpl<>(List.of(projection)));
 
             byte[] pdf = reportService.generateReportPdf(CLIENT_ID, FECHA_DESDE, FECHA_HASTA);
@@ -127,8 +130,8 @@ class ReportServiceTest {
 
         @Test
         void shouldGenerateValidPdfWhenThereAreNoMovements() {
-            when(bankDb.findClientById(CLIENT_ID)).thenReturn(Optional.of(currentClient()));
-            when(bankDb.findReportByClientAndDateRange(eq(CLIENT_ID), any(LocalDateTime.class), any(LocalDateTime.class), eq(Pageable.unpaged())))
+            when(clientQueryPort.findClientById(CLIENT_ID)).thenReturn(Optional.of(currentClient()));
+            when(reportQueryPort.findReportByClientAndDateRange(eq(CLIENT_ID), any(LocalDateTime.class), any(LocalDateTime.class), eq(Pageable.unpaged())))
                     .thenReturn(new PageImpl<>(List.of()));
 
             byte[] pdf = reportService.generateReportPdf(CLIENT_ID, FECHA_DESDE, FECHA_HASTA);

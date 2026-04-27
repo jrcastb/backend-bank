@@ -1,6 +1,7 @@
 package com.devsu.backendbank.application.service;
 
-import com.devsu.backendbank.application.output.port.BankDb;
+import com.devsu.backendbank.application.output.port.ClientCommandPort;
+import com.devsu.backendbank.application.output.port.ClientQueryPort;
 import com.devsu.backendbank.domain.model.ClientDomain;
 import com.devsu.backendbank.infrastructure.exception.BusinessException;
 import com.devsu.backendbank.infrastructure.exception.message.BusinessErrorMessage;
@@ -35,7 +36,10 @@ class ClientServiceTest {
     private static final Pageable UNPAGED = Pageable.unpaged();
 
     @Mock
-    private BankDb bankDb;
+    private ClientQueryPort clientQueryPort;
+
+    @Mock
+    private ClientCommandPort clientCommandPort;
 
     @InjectMocks
     private ClientService clientService;
@@ -46,7 +50,7 @@ class ClientServiceTest {
         @Test
         void shouldReturnClientsPage() {
             ClientDomain client = currentClient();
-            when(bankDb.findClients(UNPAGED)).thenReturn(new PageImpl<>(java.util.List.of(client)));
+            when(clientQueryPort.findClients(UNPAGED)).thenReturn(new PageImpl<>(java.util.List.of(client)));
 
             var result = clientService.findClients(UNPAGED);
 
@@ -56,7 +60,7 @@ class ClientServiceTest {
         @Test
         void shouldReturnClientById() {
             ClientDomain client = currentClient();
-            when(bankDb.findClientById(CLIENT_ID)).thenReturn(Optional.of(client));
+            when(clientQueryPort.findClientById(CLIENT_ID)).thenReturn(Optional.of(client));
 
             ClientDomain result = clientService.findClientById(CLIENT_ID);
 
@@ -65,7 +69,7 @@ class ClientServiceTest {
 
         @Test
         void shouldFailWhenClientDoesNotExist() {
-            when(bankDb.findClientById(CLIENT_ID)).thenReturn(Optional.empty());
+            when(clientQueryPort.findClientById(CLIENT_ID)).thenReturn(Optional.empty());
 
             assertBusinessException(() -> clientService.findClientById(CLIENT_ID), BusinessErrorMessage.CLIENT_NOT_FOUND);
         }
@@ -78,8 +82,8 @@ class ClientServiceTest {
         void shouldCreateClientWhenIdentificationIsAvailable() {
             ClientDomain incoming = incomingClient();
             ClientDomain saved = currentClient();
-            when(bankDb.personExistsByIdentificacion(incoming.person().identificacion())).thenReturn(false);
-            when(bankDb.saveOrUpdateClient(incoming)).thenReturn(saved);
+            when(clientCommandPort.personExistsByIdentificacion(incoming.person().identificacion())).thenReturn(false);
+            when(clientCommandPort.saveOrUpdateClient(incoming)).thenReturn(saved);
 
             ClientDomain result = clientService.createClient(incoming);
 
@@ -89,10 +93,10 @@ class ClientServiceTest {
         @Test
         void shouldFailWhenIdentificationAlreadyExists() {
             ClientDomain incoming = incomingClient();
-            when(bankDb.personExistsByIdentificacion(incoming.person().identificacion())).thenReturn(true);
+            when(clientCommandPort.personExistsByIdentificacion(incoming.person().identificacion())).thenReturn(true);
 
             assertBusinessException(() -> clientService.createClient(incoming), BusinessErrorMessage.CLIENT_ALREADY_EXISTS);
-            verify(bankDb, never()).saveOrUpdateClient(any());
+            verify(clientCommandPort, never()).saveOrUpdateClient(any());
         }
     }
 
@@ -106,14 +110,14 @@ class ClientServiceTest {
             ClientDomain incoming = incomingClient();
             ClientDomain saved = currentClient();
 
-            when(bankDb.findClientById(CLIENT_ID)).thenReturn(Optional.of(current));
-            when(bankDb.personExistsByIdentificacionExcludingId(incoming.person().identificacion(), PERSON_ID)).thenReturn(false);
-            when(bankDb.saveOrUpdateClient(any(ClientDomain.class))).thenReturn(saved);
+            when(clientQueryPort.findClientById(CLIENT_ID)).thenReturn(Optional.of(current));
+            when(clientCommandPort.personExistsByIdentificacionExcludingId(incoming.person().identificacion(), PERSON_ID)).thenReturn(false);
+            when(clientCommandPort.saveOrUpdateClient(any(ClientDomain.class))).thenReturn(saved);
 
-            ClientDomain result = executeMutation(mutationType, CLIENT_ID, incoming);
+            ClientDomain result = executeMutation(mutationType, incoming);
 
             ArgumentCaptor<ClientDomain> captor = ArgumentCaptor.forClass(ClientDomain.class);
-            verify(bankDb).saveOrUpdateClient(captor.capture());
+            verify(clientCommandPort).saveOrUpdateClient(captor.capture());
             ClientDomain persisted = captor.getValue();
 
             assertThat(result).isEqualTo(saved);
@@ -133,10 +137,10 @@ class ClientServiceTest {
         @ParameterizedTest
         @EnumSource(MutationType.class)
         void shouldFailWhenClientDoesNotExist(MutationType mutationType) {
-            when(bankDb.findClientById(CLIENT_ID)).thenReturn(Optional.empty());
+            when(clientQueryPort.findClientById(CLIENT_ID)).thenReturn(Optional.empty());
 
-            assertBusinessException(() -> executeMutation(mutationType, CLIENT_ID, incomingClient()), BusinessErrorMessage.CLIENT_NOT_FOUND);
-            verify(bankDb, never()).saveOrUpdateClient(any());
+            assertBusinessException(() -> executeMutation(mutationType, incomingClient()), BusinessErrorMessage.CLIENT_NOT_FOUND);
+            verify(clientCommandPort, never()).saveOrUpdateClient(any());
         }
 
         @ParameterizedTest
@@ -144,11 +148,11 @@ class ClientServiceTest {
         void shouldFailWhenIdentificationBelongsToAnotherPerson(MutationType mutationType) {
             ClientDomain current = currentClient();
             ClientDomain incoming = incomingClient();
-            when(bankDb.findClientById(CLIENT_ID)).thenReturn(Optional.of(current));
-            when(bankDb.personExistsByIdentificacionExcludingId(incoming.person().identificacion(), PERSON_ID)).thenReturn(true);
+            when(clientQueryPort.findClientById(CLIENT_ID)).thenReturn(Optional.of(current));
+            when(clientCommandPort.personExistsByIdentificacionExcludingId(incoming.person().identificacion(), PERSON_ID)).thenReturn(true);
 
-            assertBusinessException(() -> executeMutation(mutationType, CLIENT_ID, incoming), BusinessErrorMessage.CLIENT_ALREADY_EXISTS);
-            verify(bankDb, never()).saveOrUpdateClient(any());
+            assertBusinessException(() -> executeMutation(mutationType, incoming), BusinessErrorMessage.CLIENT_ALREADY_EXISTS);
+            verify(clientCommandPort, never()).saveOrUpdateClient(any());
         }
     }
 
@@ -157,26 +161,26 @@ class ClientServiceTest {
 
         @Test
         void shouldDeleteClientWhenItExists() {
-            when(bankDb.findClientById(CLIENT_ID)).thenReturn(Optional.of(currentClient()));
+            when(clientQueryPort.findClientById(CLIENT_ID)).thenReturn(Optional.of(currentClient()));
 
             clientService.deleteClient(CLIENT_ID);
 
-            verify(bankDb).deleteClientById(CLIENT_ID);
+            verify(clientCommandPort).deleteClientById(CLIENT_ID);
         }
 
         @Test
         void shouldFailDeletingUnknownClient() {
-            when(bankDb.findClientById(CLIENT_ID)).thenReturn(Optional.empty());
+            when(clientQueryPort.findClientById(CLIENT_ID)).thenReturn(Optional.empty());
 
             assertBusinessException(() -> clientService.deleteClient(CLIENT_ID), BusinessErrorMessage.CLIENT_NOT_FOUND);
-            verify(bankDb, never()).deleteClientById(any());
+            verify(clientCommandPort, never()).deleteClientById(any());
         }
     }
 
-    private ClientDomain executeMutation(MutationType mutationType, Long id, ClientDomain incoming) {
+    private ClientDomain executeMutation(MutationType mutationType, ClientDomain incoming) {
         return switch (mutationType) {
-            case UPDATE -> clientService.updateClient(id, incoming);
-            case PATCH -> clientService.patchClient(id, incoming);
+            case UPDATE -> clientService.updateClient(CLIENT_ID, incoming);
+            case PATCH -> clientService.patchClient(CLIENT_ID, incoming);
         };
     }
 

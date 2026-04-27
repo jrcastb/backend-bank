@@ -1,6 +1,8 @@
 package com.devsu.backendbank.application.service;
 
-import com.devsu.backendbank.application.output.port.BankDb;
+import com.devsu.backendbank.application.output.port.AccountCommandPort;
+import com.devsu.backendbank.application.output.port.AccountQueryPort;
+import com.devsu.backendbank.application.output.port.ClientQueryPort;
 import com.devsu.backendbank.domain.model.AccountDomain;
 import com.devsu.backendbank.domain.model.ClientDomain;
 import com.devsu.backendbank.infrastructure.exception.BusinessException;
@@ -38,7 +40,13 @@ class AccountServiceTest {
     private static final Pageable UNPAGED = Pageable.unpaged();
 
     @Mock
-    private BankDb bankDb;
+    private AccountQueryPort accountQueryPort;
+
+    @Mock
+    private AccountCommandPort accountCommandPort;
+
+    @Mock
+    private ClientQueryPort clientQueryPort;
 
     @InjectMocks
     private AccountService accountService;
@@ -49,7 +57,7 @@ class AccountServiceTest {
         @Test
         void shouldReturnAccountsPage() {
             AccountDomain account = currentAccount();
-            when(bankDb.findAccounts(UNPAGED)).thenReturn(new PageImpl<>(java.util.List.of(account)));
+            when(accountQueryPort.findAccounts(UNPAGED)).thenReturn(new PageImpl<>(java.util.List.of(account)));
 
             var result = accountService.findAccounts(UNPAGED);
 
@@ -59,7 +67,7 @@ class AccountServiceTest {
         @Test
         void shouldReturnAccountById() {
             AccountDomain account = currentAccount();
-            when(bankDb.findAccountById(ACCOUNT_ID)).thenReturn(Optional.of(account));
+            when(accountQueryPort.findAccountById(ACCOUNT_ID)).thenReturn(Optional.of(account));
 
             AccountDomain result = accountService.findAccountById(ACCOUNT_ID);
 
@@ -68,7 +76,7 @@ class AccountServiceTest {
 
         @Test
         void shouldFailWhenAccountDoesNotExist() {
-            when(bankDb.findAccountById(ACCOUNT_ID)).thenReturn(Optional.empty());
+            when(accountQueryPort.findAccountById(ACCOUNT_ID)).thenReturn(Optional.empty());
 
             assertBusinessException(() -> accountService.findAccountById(ACCOUNT_ID), BusinessErrorMessage.ACCOUNT_NOT_FOUND);
         }
@@ -81,9 +89,9 @@ class AccountServiceTest {
         void shouldCreateAccountWhenClientExistsAndNumberIsAvailable() {
             AccountDomain incoming = incomingAccount();
             AccountDomain saved = currentAccount();
-            when(bankDb.findClientById(incoming.clientId())).thenReturn(Optional.of(mock(ClientDomain.class)));
-            when(bankDb.accountExistsByNumeroCuenta(incoming.numeroCuenta())).thenReturn(false);
-            when(bankDb.saveOrUpdateAccount(incoming)).thenReturn(saved);
+            when(clientQueryPort.findClientById(incoming.clientId())).thenReturn(Optional.of(mock(ClientDomain.class)));
+            when(accountCommandPort.accountExistsByNumeroCuenta(incoming.numeroCuenta())).thenReturn(false);
+            when(accountCommandPort.saveOrUpdateAccount(incoming)).thenReturn(saved);
 
             AccountDomain result = accountService.createAccount(incoming);
 
@@ -93,20 +101,20 @@ class AccountServiceTest {
         @Test
         void shouldFailCreatingAccountWhenClientDoesNotExist() {
             AccountDomain incoming = incomingAccount();
-            when(bankDb.findClientById(incoming.clientId())).thenReturn(Optional.empty());
+            when(clientQueryPort.findClientById(incoming.clientId())).thenReturn(Optional.empty());
 
             assertBusinessException(() -> accountService.createAccount(incoming), BusinessErrorMessage.CLIENT_NOT_FOUND);
-            verify(bankDb, never()).saveOrUpdateAccount(any());
+            verify(accountCommandPort, never()).saveOrUpdateAccount(any());
         }
 
         @Test
         void shouldFailCreatingAccountWhenNumberAlreadyExists() {
             AccountDomain incoming = incomingAccount();
-            when(bankDb.findClientById(incoming.clientId())).thenReturn(Optional.of(currentClient()));
-            when(bankDb.accountExistsByNumeroCuenta(incoming.numeroCuenta())).thenReturn(true);
+            when(clientQueryPort.findClientById(incoming.clientId())).thenReturn(Optional.of(currentClient()));
+            when(accountCommandPort.accountExistsByNumeroCuenta(incoming.numeroCuenta())).thenReturn(true);
 
             assertBusinessException(() -> accountService.createAccount(incoming), BusinessErrorMessage.ACCOUNT_ALREADY_EXISTS);
-            verify(bankDb, never()).saveOrUpdateAccount(any());
+            verify(accountCommandPort, never()).saveOrUpdateAccount(any());
         }
     }
 
@@ -119,15 +127,15 @@ class AccountServiceTest {
             AccountDomain incoming = incomingAccount();
             AccountDomain saved = currentAccount();
 
-            when(bankDb.findAccountById(ACCOUNT_ID)).thenReturn(Optional.of(current));
-            when(bankDb.findClientById(incoming.clientId())).thenReturn(Optional.of(currentClient()));
-            when(bankDb.accountExistsByNumeroCuentaExcludingId(incoming.numeroCuenta(), ACCOUNT_ID)).thenReturn(false);
-            when(bankDb.saveOrUpdateAccount(any(AccountDomain.class))).thenReturn(saved);
+            when(accountQueryPort.findAccountById(ACCOUNT_ID)).thenReturn(Optional.of(current));
+            when(clientQueryPort.findClientById(incoming.clientId())).thenReturn(Optional.of(currentClient()));
+            when(accountCommandPort.accountExistsByNumeroCuentaExcludingId(incoming.numeroCuenta(), ACCOUNT_ID)).thenReturn(false);
+            when(accountCommandPort.saveOrUpdateAccount(any(AccountDomain.class))).thenReturn(saved);
 
             AccountDomain result = accountService.updateAccount(ACCOUNT_ID, incoming);
 
             ArgumentCaptor<AccountDomain> captor = ArgumentCaptor.forClass(AccountDomain.class);
-            verify(bankDb).saveOrUpdateAccount(captor.capture());
+            verify(accountCommandPort).saveOrUpdateAccount(captor.capture());
             AccountDomain persisted = captor.getValue();
 
             assertThat(result).isEqualTo(saved);
@@ -143,33 +151,33 @@ class AccountServiceTest {
 
         @Test
         void shouldFailUpdatingUnknownAccount() {
-            when(bankDb.findAccountById(ACCOUNT_ID)).thenReturn(Optional.empty());
+            when(accountQueryPort.findAccountById(ACCOUNT_ID)).thenReturn(Optional.empty());
 
             assertBusinessException(() -> accountService.updateAccount(ACCOUNT_ID, incomingAccount()), BusinessErrorMessage.ACCOUNT_NOT_FOUND);
-            verify(bankDb, never()).saveOrUpdateAccount(any());
+            verify(accountCommandPort, never()).saveOrUpdateAccount(any());
         }
 
         @Test
         void shouldFailUpdatingWhenClientDoesNotExist() {
             AccountDomain current = currentAccount();
             AccountDomain incoming = incomingAccount();
-            when(bankDb.findAccountById(ACCOUNT_ID)).thenReturn(Optional.of(current));
-            when(bankDb.findClientById(incoming.clientId())).thenReturn(Optional.empty());
+            when(accountQueryPort.findAccountById(ACCOUNT_ID)).thenReturn(Optional.of(current));
+            when(clientQueryPort.findClientById(incoming.clientId())).thenReturn(Optional.empty());
 
             assertBusinessException(() -> accountService.updateAccount(ACCOUNT_ID, incoming), BusinessErrorMessage.CLIENT_NOT_FOUND);
-            verify(bankDb, never()).saveOrUpdateAccount(any());
+            verify(accountCommandPort, never()).saveOrUpdateAccount(any());
         }
 
         @Test
         void shouldFailUpdatingWhenNumberBelongsToAnotherAccount() {
             AccountDomain current = currentAccount();
             AccountDomain incoming = incomingAccount();
-            when(bankDb.findAccountById(ACCOUNT_ID)).thenReturn(Optional.of(current));
-            when(bankDb.findClientById(incoming.clientId())).thenReturn(Optional.of(currentClient()));
-            when(bankDb.accountExistsByNumeroCuentaExcludingId(incoming.numeroCuenta(), ACCOUNT_ID)).thenReturn(true);
+            when(accountQueryPort.findAccountById(ACCOUNT_ID)).thenReturn(Optional.of(current));
+            when(clientQueryPort.findClientById(incoming.clientId())).thenReturn(Optional.of(currentClient()));
+            when(accountCommandPort.accountExistsByNumeroCuentaExcludingId(incoming.numeroCuenta(), ACCOUNT_ID)).thenReturn(true);
 
             assertBusinessException(() -> accountService.updateAccount(ACCOUNT_ID, incoming), BusinessErrorMessage.ACCOUNT_ALREADY_EXISTS);
-            verify(bankDb, never()).saveOrUpdateAccount(any());
+            verify(accountCommandPort, never()).saveOrUpdateAccount(any());
         }
     }
 
@@ -195,16 +203,16 @@ class AccountServiceTest {
             );
             AccountDomain saved = currentAccount();
 
-            when(bankDb.findAccountById(ACCOUNT_ID)).thenReturn(Optional.of(current));
+            when(accountQueryPort.findAccountById(ACCOUNT_ID)).thenReturn(Optional.of(current));
             if (patchMode == PatchMode.CHANGED_NUMBER) {
-                when(bankDb.accountExistsByNumeroCuentaExcludingId(incoming.numeroCuenta(), ACCOUNT_ID)).thenReturn(false);
+                when(accountCommandPort.accountExistsByNumeroCuentaExcludingId(incoming.numeroCuenta(), ACCOUNT_ID)).thenReturn(false);
             }
-            when(bankDb.saveOrUpdateAccount(any(AccountDomain.class))).thenReturn(saved);
+            when(accountCommandPort.saveOrUpdateAccount(any(AccountDomain.class))).thenReturn(saved);
 
             AccountDomain result = accountService.patchAccount(ACCOUNT_ID, incoming);
 
             ArgumentCaptor<AccountDomain> captor = ArgumentCaptor.forClass(AccountDomain.class);
-            verify(bankDb).saveOrUpdateAccount(captor.capture());
+            verify(accountCommandPort).saveOrUpdateAccount(captor.capture());
             AccountDomain persisted = captor.getValue();
 
             assertThat(result).isEqualTo(saved);
@@ -214,28 +222,28 @@ class AccountServiceTest {
             assertThat(persisted.nombreCliente()).isEqualTo(current.nombreCliente());
 
             if (patchMode == PatchMode.SAME_NUMBER) {
-                verify(bankDb, never()).accountExistsByNumeroCuentaExcludingId(any(), any());
+                verify(accountCommandPort, never()).accountExistsByNumeroCuentaExcludingId(any(), any());
                 assertThat(persisted.numeroCuenta()).isEqualTo(current.numeroCuenta());
             }
         }
 
         @Test
         void shouldFailPatchingUnknownAccount() {
-            when(bankDb.findAccountById(ACCOUNT_ID)).thenReturn(Optional.empty());
+            when(accountQueryPort.findAccountById(ACCOUNT_ID)).thenReturn(Optional.empty());
 
             assertBusinessException(() -> accountService.patchAccount(ACCOUNT_ID, incomingAccount()), BusinessErrorMessage.ACCOUNT_NOT_FOUND);
-            verify(bankDb, never()).saveOrUpdateAccount(any());
+            verify(accountCommandPort, never()).saveOrUpdateAccount(any());
         }
 
         @Test
         void shouldFailPatchingWhenChangedNumberAlreadyExists() {
             AccountDomain current = currentAccount();
             AccountDomain incoming = incomingAccount();
-            when(bankDb.findAccountById(ACCOUNT_ID)).thenReturn(Optional.of(current));
-            when(bankDb.accountExistsByNumeroCuentaExcludingId(ANOTHER_NUMERO_CUENTA, ACCOUNT_ID)).thenReturn(true);
+            when(accountQueryPort.findAccountById(ACCOUNT_ID)).thenReturn(Optional.of(current));
+            when(accountCommandPort.accountExistsByNumeroCuentaExcludingId(ANOTHER_NUMERO_CUENTA, ACCOUNT_ID)).thenReturn(true);
 
             assertBusinessException(() -> accountService.patchAccount(ACCOUNT_ID, incoming), BusinessErrorMessage.ACCOUNT_ALREADY_EXISTS);
-            verify(bankDb, never()).saveOrUpdateAccount(any());
+            verify(accountCommandPort, never()).saveOrUpdateAccount(any());
         }
     }
 
@@ -244,19 +252,19 @@ class AccountServiceTest {
 
         @Test
         void shouldDeleteAccountWhenItExists() {
-            when(bankDb.findAccountById(ACCOUNT_ID)).thenReturn(Optional.of(currentAccount()));
+            when(accountQueryPort.findAccountById(ACCOUNT_ID)).thenReturn(Optional.of(currentAccount()));
 
             accountService.deleteAccount(ACCOUNT_ID);
 
-            verify(bankDb).deleteAccountById(ACCOUNT_ID);
+            verify(accountCommandPort).deleteAccountById(ACCOUNT_ID);
         }
 
         @Test
         void shouldFailDeletingUnknownAccount() {
-            when(bankDb.findAccountById(ACCOUNT_ID)).thenReturn(Optional.empty());
+            when(accountQueryPort.findAccountById(ACCOUNT_ID)).thenReturn(Optional.empty());
 
             assertBusinessException(() -> accountService.deleteAccount(ACCOUNT_ID), BusinessErrorMessage.ACCOUNT_NOT_FOUND);
-            verify(bankDb, never()).deleteAccountById(any());
+            verify(accountCommandPort, never()).deleteAccountById(any());
         }
     }
 

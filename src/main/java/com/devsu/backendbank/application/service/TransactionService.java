@@ -1,10 +1,13 @@
 package com.devsu.backendbank.application.service;
 
 import com.devsu.backendbank.application.input.port.TransactionApi;
-import com.devsu.backendbank.application.output.port.BankDb;
+import com.devsu.backendbank.application.output.port.AccountLockPort;
+import com.devsu.backendbank.application.output.port.TransactionCommandPort;
+import com.devsu.backendbank.application.output.port.TransactionQueryPort;
+import com.devsu.backendbank.application.service.transaction.TransactionRuleContext;
+import com.devsu.backendbank.application.service.transaction.TransactionRuleStrategyResolver;
 import com.devsu.backendbank.domain.model.AccountDomain;
 import com.devsu.backendbank.domain.model.TransactionDomain;
-import com.devsu.backendbank.domain.enums.TransactionTypeDomain;
 import com.devsu.backendbank.infrastructure.exception.BusinessException;
 import com.devsu.backendbank.infrastructure.exception.message.BusinessErrorMessage;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
@@ -22,25 +24,26 @@ import java.time.ZoneOffset;
 @RequiredArgsConstructor
 public class TransactionService implements TransactionApi {
 
-    private static final BigDecimal DAILY_DEBIT_LIMIT = BigDecimal.valueOf(1000);
-
-    private final BankDb bankDb;
+    private final AccountLockPort accountLockPort;
+    private final TransactionQueryPort transactionQueryPort;
+    private final TransactionCommandPort transactionCommandPort;
+    private final TransactionRuleStrategyResolver transactionRuleStrategyResolver;
 
     @Override
     public Page<TransactionDomain> findTransactions(Pageable pageable) {
-        return bankDb.findTransactions(pageable);
+        return transactionQueryPort.findTransactions(pageable);
     }
 
     @Override
     public TransactionDomain findTransactionById(Long id) {
-        return bankDb.findTransactionById(id)
+        return transactionQueryPort.findTransactionById(id)
                 .orElseThrow(() -> new BusinessException(BusinessErrorMessage.NO_MOVEMENTS_FOUND));
     }
 
     @Override
     @Transactional
     public TransactionDomain createTransaction(TransactionDomain transaction) {
-        AccountDomain account = bankDb.findAccountByIdForUpdate(transaction.accountId())
+        AccountDomain account = accountLockPort.findAccountByIdForUpdate(transaction.accountId())
                 .orElseThrow(() -> new BusinessException(BusinessErrorMessage.ACCOUNT_NOT_FOUND));
 
         if (Boolean.FALSE.equals(account.estado())) {
@@ -51,11 +54,12 @@ public class TransactionService implements TransactionApi {
             throw new BusinessException(BusinessErrorMessage.INVALID_TRANSACTION_AMOUNT);
         }
 
-        BigDecimal currentBalance = bankDb.findLatestTransactionByAccountId(account.id())
+        BigDecimal currentBalance = transactionQueryPort.findLatestTransactionByAccountId(account.id())
                 .map(TransactionDomain::saldo)
                 .orElse(account.saldoInicial());
 
-        validateBusinessRules(transaction, currentBalance, account.id());
+        transactionRuleStrategyResolver.resolve(transaction.tipoMovimiento())
+                .validate(new TransactionRuleContext(transaction, account, currentBalance));
 
         BigDecimal newBalance = currentBalance.add(transaction.valor());
         TransactionDomain toSave = new TransactionDomain(
@@ -69,30 +73,12 @@ public class TransactionService implements TransactionApi {
                 account.numeroCuenta()
         );
 
-        return bankDb.saveTransaction(toSave);
+        return transactionCommandPort.saveTransaction(toSave);
     }
 
     @Override
     public void deleteTransaction(Long id) {
         findTransactionById(id);
-        bankDb.deleteTransactionById(id);
-    }
-
-    private void validateBusinessRules(TransactionDomain input, BigDecimal currentBalance, Long accountId) {
-        if (input.tipoMovimiento() == TransactionTypeDomain.DEBITO) {
-            BigDecimal debitAmount = input.valor().abs();
-            if (currentBalance.compareTo(debitAmount) < 0) {
-                throw new BusinessException(BusinessErrorMessage.INSUFFICIENT_FUNDS);
-            }
-
-            LocalDate today = LocalDate.now(ZoneOffset.UTC);
-            LocalDateTime from = today.atStartOfDay();
-            LocalDateTime to = today.plusDays(1).atStartOfDay().minusNanos(1);
-            BigDecimal currentDailyDebits = bankDb.sumDailyDebitsByAccount(accountId, from, to);
-            BigDecimal projected = currentDailyDebits.add(debitAmount);
-            if (projected.compareTo(DAILY_DEBIT_LIMIT) > 0) {
-                throw new BusinessException(BusinessErrorMessage.DAILY_LIMIT_EXCEEDED);
-            }
-        }
+        transactionCommandPort.deleteTransactionById(id);
     }
 }

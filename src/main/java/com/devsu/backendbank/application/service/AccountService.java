@@ -1,7 +1,9 @@
 package com.devsu.backendbank.application.service;
 
 import com.devsu.backendbank.application.input.port.AccountApi;
-import com.devsu.backendbank.application.output.port.BankDb;
+import com.devsu.backendbank.application.output.port.AccountCommandPort;
+import com.devsu.backendbank.application.output.port.AccountQueryPort;
+import com.devsu.backendbank.application.output.port.ClientQueryPort;
 import com.devsu.backendbank.domain.model.AccountDomain;
 import com.devsu.backendbank.infrastructure.exception.BusinessException;
 import com.devsu.backendbank.infrastructure.exception.message.BusinessErrorMessage;
@@ -14,56 +16,58 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AccountService implements AccountApi {
 
-    private final BankDb bankDb;
+    private final AccountQueryPort accountQueryPort;
+    private final AccountCommandPort accountCommandPort;
+    private final ClientQueryPort clientQueryPort;
 
     @Override
     public Page<AccountDomain> findAccounts(Pageable pageable) {
-        return bankDb.findAccounts(pageable);
+        return accountQueryPort.findAccounts(pageable);
     }
 
     @Override
     public AccountDomain findAccountById(Long id) {
-        return bankDb.findAccountById(id)
+        return accountQueryPort.findAccountById(id)
                 .orElseThrow(() -> new BusinessException(BusinessErrorMessage.ACCOUNT_NOT_FOUND));
     }
 
     @Override
     public AccountDomain createAccount(AccountDomain account) {
-        if (bankDb.findClientById(account.clientId()).isEmpty()) {
+        if (clientQueryPort.findClientById(account.clientId()).isEmpty()) {
             throw new BusinessException(BusinessErrorMessage.CLIENT_NOT_FOUND);
         }
-        if (bankDb.accountExistsByNumeroCuenta(account.numeroCuenta())) {
+        if (accountCommandPort.accountExistsByNumeroCuenta(account.numeroCuenta())) {
             throw new BusinessException(BusinessErrorMessage.ACCOUNT_ALREADY_EXISTS);
         }
-        return bankDb.saveOrUpdateAccount(account);
+        return accountCommandPort.saveOrUpdateAccount(account);
     }
 
     @Override
     public AccountDomain updateAccount(Long id, AccountDomain account) {
         AccountDomain current = findAccountById(id);
-        if (bankDb.findClientById(account.clientId()).isEmpty()) {
+        if (clientQueryPort.findClientById(account.clientId()).isEmpty()) {
             throw new BusinessException(BusinessErrorMessage.CLIENT_NOT_FOUND);
         }
-        if (bankDb.accountExistsByNumeroCuentaExcludingId(account.numeroCuenta(), id)) {
+        if (accountCommandPort.accountExistsByNumeroCuentaExcludingId(account.numeroCuenta(), id)) {
             throw new BusinessException(BusinessErrorMessage.ACCOUNT_ALREADY_EXISTS);
         }
-        return bankDb.saveOrUpdateAccount(preserveAudit(current, account));
+        return accountCommandPort.saveOrUpdateAccount(preserveAudit(current, account));
     }
 
     @Override
     public AccountDomain patchAccount(Long id, AccountDomain account) {
         AccountDomain current = findAccountById(id);
         if (!current.numeroCuenta().equals(account.numeroCuenta())
-                && bankDb.accountExistsByNumeroCuentaExcludingId(account.numeroCuenta(), id)) {
+                && accountCommandPort.accountExistsByNumeroCuentaExcludingId(account.numeroCuenta(), id)) {
             throw new BusinessException(BusinessErrorMessage.ACCOUNT_ALREADY_EXISTS);
         }
-        return bankDb.saveOrUpdateAccount(preserveAudit(current, account));
+        return accountCommandPort.saveOrUpdateAccount(preserveAudit(current, account));
     }
 
     @Override
     public void deleteAccount(Long id) {
         findAccountById(id);
-        bankDb.deleteAccountById(id);
+        accountCommandPort.deleteAccountById(id);
     }
 
     private AccountDomain preserveAudit(AccountDomain current, AccountDomain replacement) {

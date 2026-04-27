@@ -1,7 +1,8 @@
 package com.devsu.backendbank.application.service;
 
 import com.devsu.backendbank.application.input.port.ClientApi;
-import com.devsu.backendbank.application.output.port.BankDb;
+import com.devsu.backendbank.application.output.port.ClientCommandPort;
+import com.devsu.backendbank.application.output.port.ClientQueryPort;
 import com.devsu.backendbank.domain.model.ClientDomain;
 import com.devsu.backendbank.domain.model.PersonDomain;
 import com.devsu.backendbank.infrastructure.exception.BusinessException;
@@ -15,51 +16,52 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class ClientService implements ClientApi {
 
-    private final BankDb bankDb;
+    private final ClientQueryPort clientQueryPort;
+    private final ClientCommandPort clientCommandPort;
 
     @Override
     public Page<ClientDomain> findClients(Pageable pageable) {
-        return bankDb.findClients(pageable);
+        return clientQueryPort.findClients(pageable);
     }
 
     @Override
     public ClientDomain findClientById(Long id) {
-        return bankDb.findClientById(id)
+        return clientQueryPort.findClientById(id)
                 .orElseThrow(() -> new BusinessException(BusinessErrorMessage.CLIENT_NOT_FOUND));
     }
 
     @Override
     public ClientDomain createClient(ClientDomain client) {
-        if (bankDb.personExistsByIdentificacion(client.person().identificacion())) {
+        if (clientCommandPort.personExistsByIdentificacion(client.person().identificacion())) {
             throw new BusinessException(BusinessErrorMessage.CLIENT_ALREADY_EXISTS);
         }
-        return bankDb.saveOrUpdateClient(client);
+        return clientCommandPort.saveOrUpdateClient(client);
     }
 
     @Override
     public ClientDomain updateClient(Long id, ClientDomain client) {
         ClientDomain current = findClientById(id);
         Long personId = current.person().id();
-        if (personId != null && bankDb.personExistsByIdentificacionExcludingId(client.person().identificacion(), personId)) {
+        if (personId != null && clientCommandPort.personExistsByIdentificacionExcludingId(client.person().identificacion(), personId)) {
             throw new BusinessException(BusinessErrorMessage.CLIENT_ALREADY_EXISTS);
         }
-        return bankDb.saveOrUpdateClient(preserveIdentity(current, client));
+        return clientCommandPort.saveOrUpdateClient(preserveIdentity(current, client));
     }
 
     @Override
     public ClientDomain patchClient(Long id, ClientDomain client) {
         ClientDomain current = findClientById(id);
         Long personId = current.person().id();
-        if (personId != null && bankDb.personExistsByIdentificacionExcludingId(client.person().identificacion(), personId)) {
+        if (personId != null && clientCommandPort.personExistsByIdentificacionExcludingId(client.person().identificacion(), personId)) {
             throw new BusinessException(BusinessErrorMessage.CLIENT_ALREADY_EXISTS);
         }
-        return bankDb.saveOrUpdateClient(preserveIdentity(current, client));
+        return clientCommandPort.saveOrUpdateClient(preserveIdentity(current, client));
     }
 
     @Override
     public void deleteClient(Long id) {
         findClientById(id);
-        bankDb.deleteClientById(id);
+        clientCommandPort.deleteClientById(id);
     }
 
     private ClientDomain preserveIdentity(ClientDomain current, ClientDomain incoming) {

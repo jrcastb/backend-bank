@@ -1,7 +1,8 @@
 package com.devsu.backendbank.application.service;
 
 import com.devsu.backendbank.application.input.port.ReportApi;
-import com.devsu.backendbank.application.output.port.BankDb;
+import com.devsu.backendbank.application.output.port.ClientQueryPort;
+import com.devsu.backendbank.application.output.port.ReportQueryPort;
 import com.devsu.backendbank.domain.model.ReportItemDomain;
 import com.devsu.backendbank.domain.model.ReportResultDomain;
 import com.devsu.backendbank.infrastructure.exception.BusinessException;
@@ -43,7 +44,8 @@ public class ReportService implements ReportApi {
     public static final Integer MARGIN_LR = 24;
     public static final Integer MARGIN_TB = 20;
 
-    private final BankDb bankDb;
+    private final ClientQueryPort clientQueryPort;
+    private final ReportQueryPort reportQueryPort;
 
     @Override
     public ReportResultDomain generateReport(Long clientId, LocalDate fechaDesde, LocalDate fechaHasta) {
@@ -61,14 +63,14 @@ public class ReportService implements ReportApi {
             throw new BusinessException(BusinessErrorMessage.INVALID_DATE_RANGE);
         }
 
-        if (bankDb.findClientById(clientId).isEmpty()) {
+        if (clientQueryPort.findClientById(clientId).isEmpty()) {
             throw new BusinessException(BusinessErrorMessage.CLIENT_NOT_FOUND);
         }
 
         LocalDateTime from = fechaDesde.atStartOfDay();
         LocalDateTime to = fechaHasta.plusDays(1).atStartOfDay().minusNanos(1);
 
-        List<ReportItemDomain> items = bankDb.findReportByClientAndDateRange(clientId, from, to, Pageable.unpaged())
+        List<ReportItemDomain> items = reportQueryPort.findReportByClientAndDateRange(clientId, from, to, Pageable.unpaged())
                 .stream()
                 .map(this::toReportItem)
                 .toList();
