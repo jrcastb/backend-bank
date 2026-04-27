@@ -41,7 +41,6 @@ public class BankAdapterRepository implements BankDb {
     private final AccountDataMapper accountDataMapper;
     private final TransactionDataMapper transactionDataMapper;
 
-    // ===================== LECTURA =====================
     @Override
     public Page<PersonDomain> findPersons(Pageable pageable) {
         return personRepository.findAll(pageable)
@@ -128,7 +127,6 @@ public class BankAdapterRepository implements BankDb {
         return transactionRepository.findReportByClientAndDateRange(clientId, fechaDesde, fechaHasta, pageable);
     }
 
-    // ===================== VALIDACIÓN =====================
 
     @Override
     public boolean personExistsByIdentificacion(String identificacion) {
@@ -149,8 +147,6 @@ public class BankAdapterRepository implements BankDb {
     public boolean accountExistsByNumeroCuentaExcludingId(String numeroCuenta, Long id) {
         return accountRepository.existsByNumeroCuentaAndIdNot(numeroCuenta, id);
     }
-
-    // ===================== PERSISTENCIA =====================
 
     @Override
     public PersonDomain saveOrUpdatePerson(PersonDomain personDomain) {
@@ -203,8 +199,6 @@ public class BankAdapterRepository implements BankDb {
         }
     }
 
-    // ===================== ELIMINACIÓN =====================
-
     @Override
     public void deleteClientById(Long id) {
         try {
@@ -234,8 +228,6 @@ public class BankAdapterRepository implements BankDb {
             throw new TechnicalException(e, TechnicalErrorMessage.DATA_INTEGRITY_VIOLATION);
         }
     }
-
-    // ===================== AGREGACIONES / CONCURRENCIA =====================
 
     @Override
     public Optional<AccountDomain> findAccountByIdForUpdate(Long accountId) {

@@ -1,0 +1,24 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+*.iml
+
+# Build
+build/
+.gradle
+*.jar
+
+# Docs
+README.md
+HELP.md
+
+# Docker
+Dockerfile
+docker-compose.yml
+
+# OS
+.DS_Store
+

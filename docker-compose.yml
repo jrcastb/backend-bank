@@ -6,40 +6,74 @@ services:
     container_name: backend-bank-mysql
     restart: unless-stopped
     environment:
+      # Base de datos y usuario
       MYSQL_DATABASE: ${MYSQL_DATABASE:-backend_bank}
       MYSQL_USER: ${MYSQL_USER:-backend_user}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-backend_pass}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_pass}
+      # Configuración MySQL
+      MYSQL_INITDB_SKIP_TZINFO: "yes"
     ports:
       - "${MYSQL_PORT:-3306}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-root_pass}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u${MYSQL_USER:-backend_user}", "-p${MYSQL_PASSWORD:-backend_pass}"]
       interval: 10s
       timeout: 5s
       retries: 10
+      start_period: 20s
+    networks:
+      - backend-bank-network
 
   backend-bank:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        # Argumentos de build si es necesario
+        - GRADLE_VERSION=8.14.3
+    image: backend-bank:latest
     container_name: backend-bank-app
     restart: unless-stopped
     depends_on:
       mysql:
         condition: service_healthy
     environment:
+      # Spring Boot
       SPRING_PROFILES_ACTIVE: docker
       SERVER_PORT: 8080
+      
+      # MySQL Connection
       MYSQL_HOST: mysql
       MYSQL_PORT: 3306
       MYSQL_DATABASE: ${MYSQL_DATABASE:-backend_bank}
       MYSQL_USER: ${MYSQL_USER:-backend_user}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-backend_pass}
+      
+      # Security (cambiar en producción)
+      SECURITY_USER: ${SECURITY_USER:-admin}
+      SECURITY_PASSWORD: ${SECURITY_PASSWORD:-admin123}
+      
+      # Java/JVM Options
+      JAVA_OPTS: "-Xmx512m -Xms256m"
     ports:
       - "8080:8080"
+    networks:
+      - backend-bank-network
+    # Health check del backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
 
 volumes:
   mysql_data:
+    driver: local
+
+networks:
+  backend-bank-network:
+    driver: bridge
 
